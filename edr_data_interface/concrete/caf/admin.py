@@ -10,9 +10,12 @@ class RefreshCollections(RefreshCollections):
     def __init__(self):
         self.metadata_store = S3FSMetadataStore
 
-    def data(self):
+    def collection(self, name) -> Metadata:
+        return self.metadata_store.get(name)
+
+    def collections(self) -> List:
         collections_metadata: List[Metadata] = []
         for collection_name in self.metadata_store.available_datasets():
-            collection = self.metadata_store.get(collection_name)
-            collections_metadata.append(collection)
+            collection_metadata = self.collection(collection_name)
+            collections_metadata.append(collection_metadata)
         return collections_metadata
