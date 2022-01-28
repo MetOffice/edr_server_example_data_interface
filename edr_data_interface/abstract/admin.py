@@ -40,11 +40,19 @@ class RefreshCollections(Interface):
         """Define if the collection has a vertical extent."""
         return self.vertical_extent
 
+    def get_parameters(self, collection_id):
+        """
+        Return metadata for all the parameters (~physical quantities)
+        associated with the collection specified by its ID `collection_id`.
+
+        """
+        raise NotImplementedError
+
     def make_collection(self, name):
-        raise NotImplemented
+        raise NotImplementedError
 
     def make_collections(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def data(self):
         return self.make_collections()
