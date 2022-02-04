@@ -2,7 +2,7 @@ from collections import namedtuple
 from collections import namedtuple
 from typing import Dict, List
 
-from ...abstract.admin import RefreshCollections
+from edr_server.abstract_data_interface.admin import RefreshCollections
 
 
 PARAMS = {
