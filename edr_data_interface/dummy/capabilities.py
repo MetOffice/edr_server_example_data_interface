@@ -1,4 +1,4 @@
-from ...abstract.capabilities import API, Capabilities, Conformance
+from edr_server.abstract_data_interface.capabilities import API, Capabilities, Conformance
 
 
 class API(API):

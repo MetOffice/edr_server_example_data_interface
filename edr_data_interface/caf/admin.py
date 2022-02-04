@@ -3,7 +3,7 @@ from typing import List
 from clean_air.data.storage import S3FSMetadataStore
 from clean_air.models import Metadata
 
-from ...abstract.admin import RefreshCollections
+from edr_server.abstract_data_interface.admin import RefreshCollections
 
 
 class RefreshCollections(RefreshCollections):
