@@ -42,8 +42,8 @@ PARAMS_LOOKUP = {
 
 SAMPLES: Dict = {
     "00001": [
-        "00001",
         "One",
+        "00001",
         "The first item",
         ["Example", "Dummy"],
         [-180, -90, 180, 90],
@@ -51,8 +51,8 @@ SAMPLES: Dict = {
         "WGS 1984",
     ],
     "00002": [
-        "00002",
         "Two",
+        "00002",
         "The second item",
         ["Example", "Dummy"],
         [-180, -90, 180, 90],
@@ -99,12 +99,12 @@ class RefreshCollections(RefreshCollections):
         extents = VERTICAL_EXTENTS[name] if this_extent else None
         return extents
 
-    def get_parameters(self, collection_id):
+    def get_parameters(self, collection_id) -> List[Parameter]:
         param_names = PARAMS_LOOKUP[collection_id]
-        params = {}
+        params = []
         for name in param_names:
             param_metadata = PARAMS[name]
-            params[name] = param(name, *param_metadata)
+            params.append(Parameter(name, *param_metadata))
         return params
 
     def make_collection(self, name) -> Collection:
