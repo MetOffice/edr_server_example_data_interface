@@ -1,8 +1,8 @@
 from collections import namedtuple
-from collections import namedtuple
+import copy
 from typing import Dict, List
 
-from edr_server.abstract_data_interface.admin import RefreshCollections
+from edr_server.abstract_data_interface.admin import Collection, Parameter, RefreshCollections
 
 
 PARAMS = {
@@ -45,31 +45,31 @@ SAMPLES: Dict = {
         "00001",
         "One",
         "The first item",
+        ["Example", "Dummy"],
+        [-180, -90, 180, 90],
         "CRS84",
         "WGS 1984",
-        [-180, -90, 180, 90],
-        ["Example", "Dummy"],
     ],
     "00002": [
         "00002",
         "Two",
         "The second item",
-        "EPSG4326",
-        "EPSG4326",
-        [-180, -90, 180, 90],
         ["Example", "Dummy"],
+        [-180, -90, 180, 90],
+        "EPSG4326",
+        "EPSG4326",
     ],
 }
 
-FIELDS: List[str] = [
-    "id",
-    "name",
-    "description",
-    "crs",
-    "crs_name",
-    "bbox",
-    "keywords",
-]
+TEMPORAL_EXTENTS: Dict = {
+    "00001": ["today", "TIMECRS", "Dummy temporal extent"],
+    "00002": ["today/tomorrow", "TIMECRS", "Dummy temporal extent"],
+}
+
+VERTICAL_EXTENTS: Dict = {
+    "00001": [[2], "VERTCS", "Dummy vertical extent"],
+    "00002": [[2, 10], "VERTCS", "Dummy vertical extent"],
+}
 
 PARAM_FIELDS = [
     "name",
@@ -88,23 +88,16 @@ param = namedtuple("param", PARAM_FIELDS)
 class RefreshCollections(RefreshCollections):
     def __init__(self, supported_data_queries) -> None:
         super().__init__(supported_data_queries)
-        self.collection = namedtuple("collection", FIELDS)
 
-    def _get_temporal_extent(self):
+    def _get_temporal_extent(self, name):
         this_extent = True
-        if this_extent:
-            FIELDS.extend(["temporal_interval", "trs", "temporal_name"])
-            SAMPLES["00001"].extend(["today", "TIMECRS", "Dummy temporal extent"])
-            SAMPLES["00002"].extend(["today/tomorrow", "TIMECRS", "Dummy temporal extent"])
-        self.temporal_extent = this_extent
+        extents = TEMPORAL_EXTENTS[name] if this_extent else None
+        return extents
 
-    def _get_vertical_extent(self):
+    def _get_vertical_extent(self, name):
         this_extent = True
-        if this_extent:
-            FIELDS.extend(["vertical_interval", "vrs", "vertical_name"])
-            SAMPLES["00001"].extend([[2], "VERTCS", "Dummy vertical extent"])
-            SAMPLES["00002"].extend([[2, 10], "VERTCS", "Dummy vertical extent"])
-        self.vertical_extent = this_extent
+        extents = VERTICAL_EXTENTS[name] if this_extent else None
+        return extents
 
     def get_parameters(self, collection_id):
         param_names = PARAMS_LOOKUP[collection_id]
@@ -114,11 +107,17 @@ class RefreshCollections(RefreshCollections):
             params[name] = param(name, *param_metadata)
         return params
 
-    def make_collection(self, name):
-        sample = SAMPLES[name]
-        return self.collection(*sample)
+    def make_collection(self, name) -> Collection:
+        sample = copy.copy(SAMPLES[name])
+        t_extents = self._get_temporal_extent(name)
+        if t_extents is not None:
+            sample.extend(t_extents)
+        v_extents = self._get_vertical_extent(name)
+        if v_extents is not None:
+            sample.extend(v_extents)
+        return Collection(*sample)
 
-    def make_collections(self) -> List:
+    def make_collections(self) -> List[Collection]:
         collections: List = []
         for name in SAMPLES.keys():
             collection = self.make_collection(name)
