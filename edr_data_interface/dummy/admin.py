@@ -62,13 +62,26 @@ SAMPLES: Dict = {
 }
 
 TEMPORAL_EXTENTS: Dict = {
-    "00001": ["today", "TIMECRS", "Dummy temporal extent"],
-    "00002": ["today/tomorrow", "TIMECRS", "Dummy temporal extent"],
+    "00001": [
+        ["2010-06-30T00:00:00Z", "2010-06-30T00:00:00Z"],
+        [],
+        "TIMECRS",
+        "Dummy temporal extent"],
+    "00002": [
+        ["2015-11-01T00:00:00", "2015-11-02T00:00:00"],
+        ["R24/2015-11-02T00:00:00/PT1H"],
+        "TIMECRS",
+        "Dummy temporal extent"],
 }
 
 VERTICAL_EXTENTS: Dict = {
-    "00001": [[2], "VERTCS", "Dummy vertical extent"],
-    "00002": [[2, 10], "VERTCS", "Dummy vertical extent"],
+    "00001": [[], [], "VERTCS", "Empty dummy vertical extent"],
+    "00002": [
+        ["2", "10"],
+        ["2", "3", "4", "5", "6", "7", "8", "9", "10"],
+        "VERTCS",
+        "Dummy vertical extent",
+    ],
 }
 
 PARAM_FIELDS = [
