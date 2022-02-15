@@ -1,6 +1,6 @@
 from typing import List
 
-from shapely.geometry import Point, Polygon
+from shapely.geometry import box, Point, Polygon
 
 from edr_server.abstract_data_interface.locations import Location, Locations
 
@@ -43,14 +43,26 @@ LOCATIONS_LOOKUP = {
 
 
 class Locations(Locations):
+    def _bbox_filter(self, location: Location) -> bool:
+        bbox_extent = self.query_parameters["bbox"]
+        bbox = box(bbox_extent["xmin"], bbox_extent["ymin"], bbox_extent["xmax"], bbox_extent["ymax"])
+        geometry = LOCATIONS[location.id][0]
+        return bbox.intersects(geometry)
+
+    def _datetime_filter(self, location: Location) -> bool:
+        return True
+
     def locations_filter(self, locations):
         """Filter locations by collection ID and any request query parameters."""
         collection_location_ids = LOCATIONS_LOOKUP[self.collection_id]
-        collection_locations = filter(
+        locations = filter(
             lambda l: l.id in collection_location_ids,
             locations)
-        # TODO add query parameter filters.
-        return list(collection_locations)
+        if self.query_parameters.get("bbox") is not None:
+            locations = filter(self._bbox_filter, locations)
+        if self.query_parameters.get("datetime") is not None:
+            locations = filter(self._datetime_filter, locations)
+        return list(locations)
 
     def _handle_geometry(self, geometry):
         """
