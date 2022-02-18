@@ -2,7 +2,51 @@ from typing import List
 
 from shapely.geometry import box, Point, Polygon
 
-from edr_server.abstract_data_interface.locations import Location, Locations
+from edr_server.abstract_data_interface.locations import Location, Locations, Parameter
+
+
+CATEGORY_ENCODING = {
+    "#000": 0.0,
+    "#444": 20.0,
+    "#888": 40.0,
+    "#ccc": 60.0,
+    "#fff": 80.0,
+}
+
+
+PARAMETERS = {
+    "param1": {
+        "name": "Parameter 1",
+        "description": "The first parameter, describing wind speed",
+        "unit": "m s-1",
+        "unit_label": "m/s",
+        "unit_type": "http://www.example.com/define/unit/ms-1",
+        "phenomenon_id": "http://www.example.com/phenom/wind_speed",
+        "phenomenon": "Wind Speed",
+        "category_encoding": CATEGORY_ENCODING,
+    },
+    "param2": {
+        "name": "Parameter 2",
+        "description": "The second parameter, describing geopotential height",
+        "unit": "m",
+        "unit_label": "m",
+        "unit_type": "http://www.example.com/define/unit/m",
+        "phenomenon_id": "http://www.example.com/phenom/geo_height",
+        "phenomenon": "Geopotential Height",
+    },
+    "param3": {
+        "name": "Parameter 3",
+        "description": "The third parameter, describing average hourly wind speed",
+        "unit": "m s-1",
+        "unit_label": "m/s",
+        "unit_type": "http://www.example.com/define/unit/ms-1",
+        "phenomenon_id": "http://www.example.com/phenom/wind_speed_mean",
+        "phenomenon": "Mean Average Wind Speed",
+        "measurement_type_method": "average",
+        "measurement_type_period": "PT1H",
+        "category_encoding": CATEGORY_ENCODING,
+    },
+}
 
 
 LOCATIONS = {
@@ -12,8 +56,9 @@ LOCATIONS = {
             "name": "Point",
             "datetime": "2021-01-31T00:00:00Z",
             "detail": "http://www.example.com/define/location/50232",
-            "description": "A point location"
+            "description": "A point location",
         },
+        "parameters": ["param1", "param2", "param3"],
     ],
     61812: [
         Polygon([[51, -3], [51, 0], [54, 0], [51, -3]]),
@@ -21,8 +66,9 @@ LOCATIONS = {
             "name": "Polygon",
             "datetime": "2020-08-15T12:30:00Z",
             "detail": "http://www.example.com/define/location/61812",
-            "description": "A polygon"
+            "description": "A polygon",
         },
+        "parameters": ["param2"],
     ],
     61198: [
         Point(25, -120),
@@ -30,8 +76,9 @@ LOCATIONS = {
             "name": "Timeseries",
             "datetime": "2021-01-01T00:00:00Z/2021-02-01T00:00:00Z",
             "detail": "http://www.example.com/define/location/61198",
-            "description": "A point location over a timeseries"
+            "description": "A point location over a timeseries",
         },
+        "parameters": ["param1", "param2", "param3"],
     ],
 }
 
@@ -43,9 +90,15 @@ LOCATIONS_LOOKUP = {
 
 
 class Locations(Locations):
+    def __init__(self, collection_id, query_parameters: dict) -> None:
+        super().__init__(collection_id, query_parameters)
+        self._parameters = self.parameters()
+
     def _bbox_filter(self, location: Location) -> bool:
         bbox_extent = self.query_parameters["bbox"]
-        bbox = box(bbox_extent["xmin"], bbox_extent["ymin"], bbox_extent["xmax"], bbox_extent["ymax"])
+        bbox = box(
+            bbox_extent["xmin"], bbox_extent["ymin"], bbox_extent["xmax"], bbox_extent["ymax"]
+        )
         geometry = LOCATIONS[location.id][0]
         return bbox.intersects(geometry)
 
@@ -90,15 +143,25 @@ class Locations(Locations):
         geom_type, coords = self._handle_geometry(geometry)
         return geom_type, coords, properties
 
+    def parameters(self) -> List(Parameter):
+        params = []
+        for id, metadata in PARAMETERS.items():
+            param = Parameter(id, **metadata)
+            params.append(param)
+        return params
+
     def all_locations(self) -> List[Location]:
         locs_list = []
         for key, loc_metadata in LOCATIONS.items():
             geometry_type, coord_list, properties = self._handle_location(loc_metadata)
+            location_parameter_ids = loc_metadata["parameters"]
+            loc_parameters = filter(lambda param: param.id in location_parameter_ids, self._parameters)
             loc = Location(**{
                 "id": key,
                 "geometry_type": geometry_type,
                 "coords": coord_list,
                 "properties": properties,
+                "parameters": loc_parameters,
             })
             locs_list.append(loc)
         return locs_list
