@@ -58,7 +58,6 @@ LOCATIONS = {
             "detail": "http://www.example.com/define/location/50232",
             "description": "A point location",
         },
-        "parameters": ["param1", "param2", "param3"],
     ],
     61812: [
         Polygon([[51, -3], [51, 0], [54, 0], [51, -3]]),
@@ -68,7 +67,6 @@ LOCATIONS = {
             "detail": "http://www.example.com/define/location/61812",
             "description": "A polygon",
         },
-        "parameters": ["param2"],
     ],
     61198: [
         Point(25, -120),
@@ -78,7 +76,6 @@ LOCATIONS = {
             "detail": "http://www.example.com/define/location/61198",
             "description": "A point location over a timeseries",
         },
-        "parameters": ["param1", "param2", "param3"],
     ],
 }
 
@@ -86,6 +83,13 @@ LOCATIONS = {
 LOCATIONS_LOOKUP = {
     "00001": [50232],
     "00002": [50232, 61812, 61198],
+}
+
+
+PARAMETERS_LOOKUP = {
+    50232: ["param1", "param2", "param3"],
+    61812: ["param2"],
+    61198: ["param1", "param2", "param3"],
 }
 
 
@@ -136,14 +140,15 @@ class Locations(Locations):
             # Otherwise, we want to covert each tuple into a space-separated string
             # of coordinate points.
             coords = [" ".join([str(emt) for emt in coord]) for coord in points]
-        return geom_type, coords
+        bbox = geometry.bounds
+        return geom_type, coords, bbox
 
     def _handle_location(self, loc):
         geometry, properties = loc
-        geom_type, coords = self._handle_geometry(geometry)
-        return geom_type, coords, properties
+        geom_type, coords, bbox = self._handle_geometry(geometry)
+        return geom_type, coords, bbox, properties
 
-    def parameters(self) -> List(Parameter):
+    def parameters(self) -> List[Parameter]:
         params = []
         for id, metadata in PARAMETERS.items():
             param = Parameter(id, **metadata)
@@ -153,15 +158,22 @@ class Locations(Locations):
     def all_locations(self) -> List[Location]:
         locs_list = []
         for key, loc_metadata in LOCATIONS.items():
-            geometry_type, coord_list, properties = self._handle_location(loc_metadata)
-            location_parameter_ids = loc_metadata["parameters"]
+            geometry_type, coord_list, bbox, properties = self._handle_location(loc_metadata)
+            location_parameter_ids = PARAMETERS_LOOKUP[key]
             loc_parameters = filter(lambda param: param.id in location_parameter_ids, self._parameters)
             loc = Location(**{
                 "id": key,
                 "geometry_type": geometry_type,
                 "coords": coord_list,
+                "bbox": bbox,
+                "temporal_interval": "",
                 "properties": properties,
-                "parameters": loc_parameters,
+                "parameters": list(loc_parameters),
+                "referencing": [],
             })
             locs_list.append(loc)
         return locs_list
+
+    def get_collection_bbox(self):
+        from .admin import SAMPLES
+        return SAMPLES[self.collection_id][-2]
