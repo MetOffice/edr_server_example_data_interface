@@ -13,7 +13,7 @@ class Items(Items):
         # Get features to serve as items.
         in_features = {}  # In future more EDR contents than locations (e.g. area, cube) might provide features
         locations_provider = Locations(self.collection_id, self.query_parameters)
-        locations = locations_provider.all_locations()
+        locations = locations_provider.locations_filter(locations_provider.all_locations())
         in_features["locations"] = locations
 
         # Present located features as items.
