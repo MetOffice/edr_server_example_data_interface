@@ -53,16 +53,13 @@ class Item(Item):
             coll_param_names.extend(PARAMETERS_LOOKUP[location])
         coll_param_names = list(set(coll_param_names))
         param_in_collection = self.param_name in coll_param_names
-        print(f"Param in collection: {param_in_collection}")
 
         # Check the parameter returns a tileset.
         this_param, = list(filter(lambda p: p.name == self.param_name, parameters))
         param_has_tilesets = this_param.value_type == "tilesets"
-        print(f"Param has tileset: {param_has_tilesets}")
 
         # Check the axes indices are integers.
         axis_inds_are_int = all([isinstance(a, int) for a in self.axes_inds])
-        print(f"Valid axis inds: {axis_inds_are_int}\nAxis inds: {self.axes_inds}")
         return param_in_collection & param_has_tilesets & axis_inds_are_int
 
     def _handle_data(self, param):
@@ -86,9 +83,7 @@ class Item(Item):
 
     def data(self) -> Union[Parameter, None]:
         valid_loc_id = self._find_valid_location_id()
-        print(f"Location ID: {valid_loc_id}")
         parameters = Location(self.collection_id, valid_loc_id, {}, "http://dummy:8000").parameters()
-        print(f"Parameters: {parameters}")
         if not self._has_item(parameters):
             result = None
         else:
