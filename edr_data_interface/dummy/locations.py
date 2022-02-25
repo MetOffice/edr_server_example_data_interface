@@ -1,4 +1,5 @@
 from typing import List
+from urllib.parse import urljoin
 
 import numpy as np
 from shapely.geometry import box, Point, Polygon
@@ -26,22 +27,22 @@ CATEGORY_ENCODING = {
 
 
 DATA = {
-    "param1": np.array([2.4, 5.8, 3.1, 3.2]),
-    "param2": construct_data(),
-    "param3": np.array([4.3, 3.5, 6.2, 9.1])
+    "Parameter 1": np.array([2.4, 5.8, 3.1, 3.2]),
+    "Parameter 2": construct_data(),
+    "Parameter 3": np.array([4.3, 3.5, 6.2, 9.1])
 }
 
 
 PARAMETERS = {
-    "param1": {
-        "name": "Parameter 1",
+    "Parameter 1": {
+        "id": "param1",
         "description": "The first dummy parameter",
         "type": "NdArray",
-        "dtype": DATA["param1"].dtype.name,
+        "dtype": DATA["Parameter 1"].dtype.name,
         "axes": ["t"],
         "shape": [4],
         "value_type": "values",
-        "values": list(DATA["param1"]),
+        "values": list(DATA["Parameter 1"]),
         "unit": "m s-1",
         "unit_label": "m/s",
         "unit_type": "http://www.example.com/define/unit/ms-1",
@@ -49,11 +50,11 @@ PARAMETERS = {
         "phenomenon": "Dummy 1",
         "category_encoding": CATEGORY_ENCODING,
     },
-    "param2": {
-        "name": "Parameter 2",
+    "Parameter 2": {
+        "id": "param2",
         "description": "The second dummy parameter",
         "type": "TiledNdArray",
-        "dtype": DATA["param2"].dtype.name,
+        "dtype": DATA["Parameter 2"].dtype.name,
         "axes": ["t", "y", "x"],
         "shape": [31, 100, 100],
         "value_type": "tilesets",
@@ -64,15 +65,15 @@ PARAMETERS = {
         "phenomenon_id": "http://www.example.com/phenom/dummy_2",
         "phenomenon": "Dummy 2",
     },
-    "param3": {
-        "name": "Parameter 3",
+    "Parameter 3": {
+        "id": "param3",
         "description": "The third dummy parameter",
         "type": "NdArray",
-        "dtype": DATA["param3"].dtype.name,
+        "dtype": DATA["Parameter 3"].dtype.name,
         "axes": ["t"],
         "shape": [4],
         "value_type": "values",
-        "values": list(DATA["param3"]),
+        "values": list(DATA["Parameter 3"]),
         "unit": "m s-1",
         "unit_label": "m/s",
         "unit_type": "http://www.example.com/define/unit/ms-1",
@@ -151,9 +152,9 @@ LOCATIONS_LOOKUP = {
 
 
 PARAMETERS_LOOKUP = {
-    "50232": ["param1", "param3"],
-    "61812": ["param2"],
-    "61198": ["param1", "param3"],
+    "50232": ["Parameter 1", "Parameter 3"],
+    "61812": ["Parameter 2"],
+    "61198": ["Parameter 1", "Parameter 3"],
 }
 
 
@@ -209,8 +210,8 @@ class Locations(Locations):
 
     def parameters(self) -> List[Parameter]:
         params = []
-        for id, metadata in PARAMETERS.items():
-            param = Parameter(id, **metadata)
+        for name, metadata in PARAMETERS.items():
+            param = Parameter(name, **metadata)
             params.append(param)
         return params
 
@@ -225,8 +226,8 @@ class Locations(Locations):
         locs_list = []
         for loc_id, loc_metadata in LOCATIONS.items():
             geometry_type, coord_list, bbox = self._handle_geometry(loc_metadata["geometry"])
-            location_parameter_ids = PARAMETERS_LOOKUP[loc_id]
-            loc_parameters = filter(lambda param: param.id in location_parameter_ids, self._parameters)
+            location_parameter_names = PARAMETERS_LOOKUP[loc_id]
+            loc_parameters = filter(lambda param: param.name in location_parameter_names, self._parameters)
             loc_refs = self.references(loc_metadata["referencing"])
             loc = Feature(**{
                 "id": loc_id,
@@ -258,17 +259,17 @@ class Location(Location):
         param_metadata = PARAMETERS[param_name]
         tile_shape = [None] * len(param_metadata["axes"])
         tile_shape[param_metadata["axes"].index(free_axis)] = 1
-        url_template = f"{self.items_url}/{param_name}_{{{free_axis}}}.json"
+        url_template = urljoin(self.items_url, f"items/{param_name}_{{{free_axis}}}")
         return [Tileset(tile_shape, url_template)]
 
     def parameters(self) -> List[Parameter]:
         selected_parameters = self._parameter_filter(PARAMETERS_LOOKUP[self.location_id])
         params = []
-        for parameter in selected_parameters:
-            metadata = PARAMETERS[parameter]
-            param = Parameter(parameter, **metadata)
+        for parameter_name in selected_parameters:
+            metadata = PARAMETERS[parameter_name]
+            param = Parameter(parameter_name, **metadata)
             if metadata["value_type"] == "tilesets":
-                tilesets = self._tilesets(parameter)
+                tilesets = self._tilesets(parameter_name)
                 param.values = tilesets
             params.append(param)
         return params
