@@ -6,7 +6,8 @@ from edr_server.abstract_data_interface.items import (
     Feature, FeatureCollection, Item, Items, Parameter
 )
 
-from .locations import DATA, LOCATIONS_LOOKUP, Location, Locations, PARAMETERS_LOOKUP
+from . import dataset
+from .locations import Location, Locations
 
 
 class Items(Items):
@@ -47,10 +48,10 @@ class Items(Items):
 class Item(Item):
     def _has_item(self, parameters) -> bool:
         # Check the parameter is in the collection.
-        coll_locations = LOCATIONS_LOOKUP[self.collection_id]
+        coll_locations = dataset.LOCATIONS_COLLECTIONS_LOOKUP[self.collection_id]
         coll_param_names = []
         for location in coll_locations:
-            coll_param_names.extend(PARAMETERS_LOOKUP[location])
+            coll_param_names.extend(dataset.PARAMETERS_LOCATIONS_LOOKUP[location])
         coll_param_names = list(set(coll_param_names))
         param_in_collection = self.param_name in coll_param_names
 
@@ -64,7 +65,7 @@ class Item(Item):
 
     def _handle_data(self, param):
         """Locate the parameter's gridded data and subset it to the 2D tile requested."""
-        param_data = DATA[param.name]
+        param_data = dataset.DATA[param.name]
         url_template = param.values[0].url_template
         item_template = url_template.split("/")[-1]
         free_axes = re.findall(r"{([\w]?)}", item_template)
@@ -75,7 +76,7 @@ class Item(Item):
 
     def _find_valid_location_id(self):
         """Find the ID of a location that contains the specified parameter."""
-        for loc_id, param_names in PARAMETERS_LOOKUP.items():
+        for loc_id, param_names in dataset.PARAMETERS_LOCATIONS_LOOKUP.items():
             if self.param_name in param_names:
                 result = loc_id
                 break
