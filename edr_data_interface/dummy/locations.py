@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 from urllib.parse import urljoin
 
 from edr_server.abstract_data_interface.locations import (
@@ -128,9 +128,16 @@ class Location(Location):
             params.append(param)
         return params
 
-    def data(self) -> Feature:
+    def data(self) -> Union[Feature, None]:
         location_parameters = self.parameters()
         locations_provider = Locations(self.collection_id, self.query_parameters)
-        this_location, = list(filter(lambda l: l.id == self.location_id, locations_provider.all_locations()))
-        this_location.parameters = location_parameters
+        filtered_locations = locations_provider.locations_filter(locations_provider.all_locations())
+        try:
+            # Look for the requested location in the filtered list of locations.
+            this_location, = list(filter(lambda l: l.id == self.location_id, filtered_locations))
+        except ValueError:
+            # Handle the location not being found.
+            this_location = None
+        else:
+            this_location.parameters = location_parameters
         return this_location
