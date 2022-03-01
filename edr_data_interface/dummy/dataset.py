@@ -40,50 +40,51 @@ DATA = {
 
 
 COLLECTIONS: Dict = {
-    "00001": [
-        "One",
-        "00001",
-        "The first collection",
-        ["Example", "Dummy"],
-        [-180, -90, 180, 90],
-        "CRS84",
-        "WGS 1984",
-    ],
-    "00002": [
-        "Two",
-        "00002",
-        "The second collection",
-        ["Example", "Dummy"],
-        [-180, -90, 180, 90],
-        "EPSG4326",
-        "EPSG4326",
-    ],
-    "00003": [
-        "Three",
-        "00003",
-        "The third collection",
-        [55.4, -3.1, 55.6, -2.9],
-        "CRS84",
-        "WGS 1984",
-    ]
+    "00001": {
+        "name": "One",
+        "id": "00001",
+        "description": "The first collection",
+        "keywords": ["Example", "Dummy"],
+        "bbox": [-180, -90, 180, 90],
+        "crs": "CRS84",
+        "crs_name": "WGS 1984",
+    },
+    "00002": {
+        "name": "Two",
+        "id": "00002",
+        "description": "The second collection",
+        "keywords": ["Example", "Dummy"],
+        "bbox": [-180, -90, 180, 90],
+        "crs": "EPSG4326",
+        "crs_name": "EPSG4326",
+    },
+    "00003": {
+        "name": "Three",
+        "id": "00003",
+        "description": "The third collection",
+        "keywords": ["Example", "Dummy"],
+        "bbox": [55.4, -3.1, 55.6, -2.9],
+        "crs": "CRS84",
+        "crs_name": "WGS 1984",
+    },
 }
 
 
 TEMPORAL_EXTENTS: Dict = {
-    "00001": [
-        ["2021-01-01T00:00:00Z/2021-02-01T00:00:00Z/PT6H"],
-        [
+    "00001": {
+        "temporal_interval": ["2021-01-01T00:00:00Z/2021-02-01T00:00:00Z/PT6H"],
+        "temporal_values": [
             "2021-01-01T00:00:00Z",
             "2021-01-01T06:00:00Z",
             "2021-01-01T12:00:00Z",
             "2021-01-01T18:00:00Z",
         ],
-        "TIMECRS",
-        "Dummy temporal extent"
-    ],
-    "00002": [
-        ["2020-08-01T12:00:00Z/2020-08-31T12:00:00Z/PT1D"],
-        [
+        "trs": "TIMECRS",
+        "temporal_name": "Dummy temporal extent",
+    },
+    "00002": {
+        "temporal_interval": ["2020-08-01T12:00:00Z/2020-08-31T12:00:00Z/PT1D"],
+        "temporal_values": [
             "2020-08-01T12:00:00Z",
             "2020-08-02T12:00:00Z",
             "2020-08-03T12:00:00Z",
@@ -116,12 +117,12 @@ TEMPORAL_EXTENTS: Dict = {
             "2020-08-30T12:00:00Z",
             "2020-08-31T12:00:00Z",
         ],
-        "TIMECRS",
-        "Dummy temporal extent"
-    ],
-    "00003": [
-        ["2021-06-30T00:00:00Z/2021-07-01T00:00:00Z/PT1H"],
-        [
+        "trs": "TIMECRS",
+        "temporal_name": "Dummy temporal extent",
+    },
+    "00003": {
+        "temporal_interval": ["2021-06-30T00:00:00Z/2021-07-01T00:00:00Z/PT1H"],
+        "temporal_values": [
             "2021-06-30T00:00:00Z",
             "2021-06-30T01:00:00Z",
             "2021-06-30T02:00:00Z",
@@ -147,25 +148,35 @@ TEMPORAL_EXTENTS: Dict = {
             "2021-06-30T22:00:00Z",
             "2021-06-30T23:00:00Z",
         ],
-        "TIMECRS",
-        "Dummy temporal extent"
-    ],
+        "trs": "TIMECRS",
+        "temporal_name": "Dummy temporal extent",
+    },
 }
 
 
 VERTICAL_EXTENTS: Dict = {
-    "00001": [[], [], "VERTCS", "Empty dummy vertical extent"],
-    "00002": [
-        ["2", "10"],
-        ["2", "3", "4", "5", "6", "7", "8", "9", "10"],
-        "VERTCS",
-        "Dummy vertical extent",
-    ],
-    "00003": [[], [], "VERTCS", "Empty dummy vertical extent"],
+    "00001": {
+        "vertical_interval": [],
+        "vertical_values": [],
+        "vrs": "VERTCS",
+        "vertical_name": "Empty dummy vertical extent"
+    },
+    "00002": {
+        "vertical_interval": ["2", "10"],
+        "vertical_values": ["2", "3", "4", "5", "6", "7", "8", "9", "10"],
+        "vrs": "VERTCS",
+        "vertical_name": "Dummy vertical extent",
+    },
+    "00003": {
+        "vertical_interval": [],
+        "vertical_values": [],
+        "vrs": "VERTCS",
+        "vertical_name": "Empty dummy vertical extent"
+    },
 }
 
 
-PARAMETERS = {
+PARAMETERS: Dict = {
     "Parameter 1": {
         "id": "param1",
         "description": "The first dummy parameter",
@@ -227,13 +238,13 @@ PARAMETERS = {
         "unit": "K",
         "unit_label": "K",
         "unit_type": "http://www.example.com/define/unit/K",
-        "phenomenon_id": "http://www.example.com/phenom/dummy_3",
-        "phenomenon": "Dummy 2",
+        "phenomenon_id": "http://www.example.com/phenom/dummy_4",
+        "phenomenon": "Dummy 4",
     },
     "Parameter 5": {
         "id": "param5",
         "description": "The fifth dummy parameter",
-        "type": "NdArray",
+        "type": "TiledNdArray",
         "dtype": DATA["Parameter 5"].dtype.name,
         "axes": ["t", "z", "y", "x"],
         "shape": [25, 25, 31, 9],
@@ -291,18 +302,17 @@ PARAMETERS_LOCATIONS_LOOKUP = {
 }
 
 
-
 LOCATIONS = {
     "50232": {
         "geometry": Polygon([[51, -3], [51, 0], [54, 0], [54, -3], [51, -3]]),
         "axes": ["x", "y", "t"],
         "axis_x_values": {"start": -3.0, "stop": 0.0, "num": 100},
         "axis_y_values": {"start": 51.0, "stop": 54.0, "num": 100},
-        "axis_t_values": {"values": TEMPORAL_EXTENTS["00001"][1]},
-        "temporal_interval": TEMPORAL_EXTENTS["00001"][0],
+        "axis_t_values": {"values": TEMPORAL_EXTENTS["00001"]["temporal_values"]},
+        "temporal_interval": TEMPORAL_EXTENTS["00001"]["temporal_interval"],
         "properties": {
             "name": "Location 50232",
-            "datetime": TEMPORAL_EXTENTS["00001"][0],
+            "datetime": TEMPORAL_EXTENTS["00001"]["temporal_interval"][0],
             "detail": "http://www.example.com/define/location/50232",
             "description": "A location",
         },
@@ -316,12 +326,13 @@ LOCATIONS = {
         "axes": ["x", "y", "t", "z"],
         "axis_x_values": {"start": -8.0, "stop": -6.0, "num": 25},
         "axis_y_values": {"start": 55.0, "stop": 57.0, "num": 25},
-        "axis_t_values": {"values": TEMPORAL_EXTENTS["00002"][1]},
-        "axis_z_values": {"values": VERTICAL_EXTENTS["00002"][1]},
-        "temporal_interval": TEMPORAL_EXTENTS["00002"][0],
+        "axis_t_values": {"values": TEMPORAL_EXTENTS["00002"]["temporal_values"]},
+        "axis_z_values": {"values": VERTICAL_EXTENTS["00002"]["vertical_values"]},
+        "temporal_interval": TEMPORAL_EXTENTS["00002"]["temporal_interval"],
+        "vertical_interval": VERTICAL_EXTENTS["00002"]["vertical_interval"],
         "properties": {
             "name": "Location 61812",
-            "datetime": TEMPORAL_EXTENTS["00002"][0],
+            "datetime": TEMPORAL_EXTENTS["00002"]["temporal_interval"][0],
             "detail": "http://www.example.com/define/location/61812",
             "description": "A classic polygon",
         },
@@ -336,12 +347,13 @@ LOCATIONS = {
         "axes": ["x", "y", "t", "z"],
         "axis_x_values": {"start": -8.0, "stop": -6.0, "num": 25},
         "axis_y_values": {"start": 55.0, "stop": 57.0, "num": 25},
-        "axis_t_values": {"values": TEMPORAL_EXTENTS["00002"][1]},
-        "axis_z_values": {"values": VERTICAL_EXTENTS["00002"][1]},
-        "temporal_interval": TEMPORAL_EXTENTS["00002"][0],
+        "axis_t_values": {"values": TEMPORAL_EXTENTS["00002"]["temporal_values"]},
+        "axis_z_values": {"values": VERTICAL_EXTENTS["00002"]["vertical_values"]},
+        "temporal_interval": TEMPORAL_EXTENTS["00002"]["temporal_interval"],
+        "vertical_interval": VERTICAL_EXTENTS["00002"]["vertical_interval"],
         "properties": {
-            "name": "Timeseries",
-            "datetime": TEMPORAL_EXTENTS["00002"][0],
+            "name": "Location 61198",
+            "datetime": TEMPORAL_EXTENTS["00002"]["temporal_interval"][0],
             "detail": "http://www.example.com/define/location/61198",
             "description": "A point location over a timeseries",
         },
@@ -356,11 +368,11 @@ LOCATIONS = {
         "axes": ["x", "y", "t"],
         "axis_x_values": {"values": [-3.0]},
         "axis_y_values": {"values": [55.5]},
-        "axis_t_values": {"values": TEMPORAL_EXTENTS["00003"][1]},
-        "temporal_interval": TEMPORAL_EXTENTS["00003"][0],
+        "axis_t_values": {"values": TEMPORAL_EXTENTS["00003"]["temporal_values"]},
+        "temporal_interval": TEMPORAL_EXTENTS["00003"]["temporal_interval"],
         "properties": {
             "name": "Timeseries location 25364",
-            "datetime": TEMPORAL_EXTENTS["00003"][0],
+            "datetime": TEMPORAL_EXTENTS["00003"]["temporal_interval"][0],
             "detail": "http://www.example.com/define/location/25364",
             "description": "A point location over a timeseries",
         },

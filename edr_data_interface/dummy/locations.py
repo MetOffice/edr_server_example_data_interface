@@ -99,8 +99,8 @@ class Locations(Locations):
         return locs_list
 
     def get_collection_bbox(self):
-        from .admin import SAMPLES
-        return SAMPLES[self.collection_id][-2]
+        from .dataset import COLLECTIONS
+        return COLLECTIONS[self.collection_id]["bbox"]
 
 
 class Location(Location):

@@ -1,7 +1,8 @@
 import copy
-from typing import Dict, List
+from typing import List
 
-from edr_server.abstract_data_interface.admin import Collection, Parameter, RefreshCollections
+from edr_server.abstract_data_interface.admin import Collection, RefreshCollections
+from edr_server.abstract_data_interface.locations import Parameter
 
 from . import dataset
 
@@ -11,36 +12,38 @@ class RefreshCollections(RefreshCollections):
         super().__init__(supported_data_queries)
 
     def _get_temporal_extent(self, name):
-        this_extent = True
-        extents = dataset.TEMPORAL_EXTENTS[name] if this_extent else None
+        extents = dataset.TEMPORAL_EXTENTS[name]
+        if not len(extents["temporal_interval"]):
+            extents = None
         return extents
 
     def _get_vertical_extent(self, name):
-        this_extent = True
-        extents = dataset.VERTICAL_EXTENTS[name] if this_extent else None
+        extents = dataset.VERTICAL_EXTENTS[name]
+        if not len(extents["vertical_interval"]):
+            extents = None
         return extents
 
     def get_parameters(self, collection_id) -> List[Parameter]:
-        param_names = dataset.PARAMS_LOOKUP[collection_id]
+        param_names = dataset.PARAMETERS_COLLECTIONS_LOOKUP[collection_id]
         params = []
         for name in param_names:
-            param_metadata = dataset.PARAMS[name]
-            params.append(Parameter(name, *param_metadata))
+            param_metadata = dataset.PARAMETERS[name]
+            params.append(Parameter(name, **param_metadata))
         return params
 
     def make_collection(self, name) -> Collection:
-        sample = copy.copy(dataset.SAMPLES[name])
+        coll = copy.copy(dataset.COLLECTIONS[name])
         t_extents = self._get_temporal_extent(name)
         if t_extents is not None:
-            sample.extend(t_extents)
+            coll.update(t_extents)
         v_extents = self._get_vertical_extent(name)
         if v_extents is not None:
-            sample.extend(v_extents)
-        return Collection(*sample)
+            coll.update(v_extents)
+        return Collection(**coll)
 
     def make_collections(self) -> List[Collection]:
         collections: List = []
-        for name in dataset.SAMPLES.keys():
+        for name in dataset.COLLECTIONS.keys():
             collection = self.make_collection(name)
             collections.append(collection)
         return collections
