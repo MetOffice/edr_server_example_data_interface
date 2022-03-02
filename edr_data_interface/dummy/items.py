@@ -22,7 +22,7 @@ class Items(Items):
         out_features = []
         for feature_type, features in in_features.items():
             for feature in features:
-                feature_href = urljoin(self.collection_href, feature_type, feature.id)
+                feature_href = urljoin(self.collection_href, f"{feature_type}/{feature.id}")
                 out_feature = Feature(
                     feature.id,
                     feature.geometry_type,
