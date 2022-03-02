@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Tuple, Union
 from urllib.parse import urljoin
 
 from edr_server.abstract_data_interface.locations import (
@@ -116,6 +116,9 @@ class Location(Location):
         url_template = urljoin(self.items_url, f"items/{param_name}{url_extension}")
         return [Tileset(tile_shape, url_template)]
 
+    def _check_location(self) -> bool:
+        return self.location_id in dataset.LOCATIONS.keys()
+
     def parameters(self) -> List[Parameter]:
         selected_parameters = self._parameter_filter(dataset.PARAMETERS_LOCATIONS_LOOKUP[self.location_id])
         params = []
@@ -128,16 +131,26 @@ class Location(Location):
             params.append(param)
         return params
 
-    def data(self) -> Union[Feature, None]:
-        location_parameters = self.parameters()
-        locations_provider = Locations(self.collection_id, self.query_parameters)
-        filtered_locations = locations_provider.locations_filter(locations_provider.all_locations())
-        try:
-            # Look for the requested location in the filtered list of locations.
-            this_location, = list(filter(lambda l: l.id == self.location_id, filtered_locations))
-        except ValueError:
-            # Handle the location not being found.
+    def data(self) -> Tuple[Union[Feature, None], Union[str, None]]:
+        error = None
+        if not self._check_location():
             this_location = None
+            error = "No such location"
         else:
-            this_location.parameters = location_parameters
-        return this_location
+            location_parameters = self.parameters()
+            if not len(location_parameters):
+                this_location = None
+                error = "No matching parameters"
+            else:
+                locations_provider = Locations(self.collection_id, self.query_parameters)
+                filtered_locations = locations_provider.locations_filter(locations_provider.all_locations())
+                try:
+                    # Look for the requested location in the filtered list of locations.
+                    this_location, = list(filter(lambda l: l.id == self.location_id, filtered_locations))
+                except ValueError:
+                    # Handle the location not being found.
+                    this_location = None
+                    error = "Location not found"
+                else:
+                    this_location.parameters = location_parameters
+        return this_location, error
