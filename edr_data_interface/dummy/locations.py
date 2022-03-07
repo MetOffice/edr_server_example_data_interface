@@ -147,6 +147,8 @@ class Location(Location):
                 try:
                     # Look for the requested location in the filtered list of locations.
                     this_location, = list(filter(lambda l: l.id == self.location_id, filtered_locations))
+                    this_location = self._datetime_filter(this_location)
+                    this_location = self._z_filter(this_location)
                 except ValueError:
                     # Handle the location not being found.
                     this_location = None
