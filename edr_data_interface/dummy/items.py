@@ -68,9 +68,9 @@ class Item(Item):
         param_data = dataset.DATA[param.name]
         url_template = param.values[0].url_template
         item_template = url_template.split("/")[-1]
-        free_axes = re.findall(r"{([\w]?)}", item_template)
+        self.free_axes = re.findall(r"{([\w]?)}", item_template)
         slicer = [slice(None)] * len(param.shape)
-        for (axis_name, idx) in zip(free_axes, self.axes_inds):
+        for (axis_name, idx) in zip(self.free_axes, self.axes_inds):
             slicer[param.axes.index(axis_name)] = slice(idx, idx+1)
         return param_data[tuple(slicer)]
 
@@ -98,7 +98,7 @@ class Item(Item):
                         type=param.type,
                         dtype=param.dtype,
                         axes=param.axes,
-                        shape=param.shape,
+                        shape=self._tile_shape(param),
                         values=self._prepare_data(indexed_data)
                     )
         return result

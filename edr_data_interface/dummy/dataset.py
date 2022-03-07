@@ -39,6 +39,14 @@ DATA = {
 }
 
 
+CRS = (
+    "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,"
+    "AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],"
+    "PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],"
+    "UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]]"
+)
+
+
 COLLECTIONS: Dict = {
     "00001": {
         "name": "One",
@@ -46,7 +54,7 @@ COLLECTIONS: Dict = {
         "description": "The first collection",
         "keywords": ["Example", "Dummy"],
         "bbox": [-180, -90, 180, 90],
-        "crs": "CRS84",
+        "crs": CRS,
         "crs_name": "WGS 1984",
     },
     "00002": {
@@ -55,7 +63,7 @@ COLLECTIONS: Dict = {
         "description": "The second collection",
         "keywords": ["Example", "Dummy"],
         "bbox": [-180, -90, 180, 90],
-        "crs": "EPSG4326",
+        "crs": CRS,
         "crs_name": "EPSG4326",
     },
     "00003": {
@@ -64,7 +72,7 @@ COLLECTIONS: Dict = {
         "description": "The third collection",
         "keywords": ["Example", "Dummy"],
         "bbox": [55.4, -3.1, 55.6, -2.9],
-        "crs": "CRS84",
+        "crs": CRS,
         "crs_name": "WGS 1984",
     },
 }
@@ -79,7 +87,7 @@ TEMPORAL_EXTENTS: Dict = {
             "2021-01-01T12:00:00Z",
             "2021-01-01T18:00:00Z",
         ],
-        "trs": "TIMECRS",
+        "trs": "TIMECRS[\"DateTime\",TDATUM[\"Gregorian Calendar\"],CS[TemporalDateTime,1],AXIS[\"Time (T)\",future]",
         "temporal_name": "Dummy temporal extent",
     },
     "00002": {
@@ -117,7 +125,7 @@ TEMPORAL_EXTENTS: Dict = {
             "2020-08-30T12:00:00Z",
             "2020-08-31T12:00:00Z",
         ],
-        "trs": "TIMECRS",
+        "trs": "TIMECRS[\"DateTime\",TDATUM[\"Gregorian Calendar\"],CS[TemporalDateTime,1],AXIS[\"Time (T)\",future]",
         "temporal_name": "Dummy temporal extent",
     },
     "00003": {
@@ -148,7 +156,7 @@ TEMPORAL_EXTENTS: Dict = {
             "2021-06-30T22:00:00Z",
             "2021-06-30T23:00:00Z",
         ],
-        "trs": "TIMECRS",
+        "trs": "TIMECRS[\"DateTime\",TDATUM[\"Gregorian Calendar\"],CS[TemporalDateTime,1],AXIS[\"Time (T)\",future]",
         "temporal_name": "Dummy temporal extent",
     },
 }
@@ -180,7 +188,7 @@ PARAMETERS: Dict = {
     "Parameter 1": {
         "id": "param1",
         "description": "The first dummy parameter",
-        "type": "NdArray",
+        "type": "TiledNdArray",
         "dtype": DATA["Parameter 1"].dtype.name,
         "axes": ["t", "y", "x"],
         "shape": [4, 100, 100],
@@ -211,7 +219,7 @@ PARAMETERS: Dict = {
     "Parameter 3": {
         "id": "param3",
         "description": "The third dummy parameter",
-        "type": "NdArray",
+        "type": "TiledNdArray",
         "dtype": DATA["Parameter 3"].dtype.name,
         "axes": ["t", "y", "x"],
         "shape": [4, 100, 100],
@@ -232,7 +240,7 @@ PARAMETERS: Dict = {
         "type": "TiledNdArray",
         "dtype": DATA["Parameter 4"].dtype.name,
         "axes": ["t", "z", "y", "x"],
-        "shape": [25, 25, 31, 9],
+        "shape": [31, 9, 25, 25],
         "value_type": "tilesets",
         "values": [],
         "unit": "K",
@@ -247,7 +255,7 @@ PARAMETERS: Dict = {
         "type": "TiledNdArray",
         "dtype": DATA["Parameter 5"].dtype.name,
         "axes": ["t", "z", "y", "x"],
-        "shape": [25, 25, 31, 9],
+        "shape": [31, 9, 25, 25],
         "value_type": "tilesets",
         "values": [],
         "unit": "%",
