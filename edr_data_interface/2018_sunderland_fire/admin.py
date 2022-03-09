@@ -18,10 +18,7 @@ class RefreshCollections(RefreshCollections):
         return extents
 
     def _get_vertical_extent(self, name):
-        extents = dataset.VERTICAL_EXTENTS[name]
-        if not len(extents["vertical_interval"]):
-            extents = None
-        return extents
+        return None
 
     def get_parameters(self, collection_id) -> List[Parameter]:
         param_names = dataset.PARAMETERS_COLLECTIONS_LOOKUP[collection_id]

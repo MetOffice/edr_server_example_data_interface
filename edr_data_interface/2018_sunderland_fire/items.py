@@ -71,7 +71,7 @@ class Item(Item):
         self.free_axes = re.findall(r"{([\w]?)}", item_template)
         slicer = [slice(None)] * len(param.shape)
         for (axis_name, idx) in zip(self.free_axes, self.axes_inds):
-            slicer[param.axes.index(axis_name)] = slice(idx)
+            slicer[param.axes.index(axis_name)] = slice(idx, idx+1)
         return cube[tuple(slicer)].data
 
     def _find_valid_location_id(self):
@@ -89,9 +89,11 @@ class Item(Item):
             parameters = Location(self.collection_id, valid_loc_id, {}, "http://dummy:8000").parameters()
             param, = list(filter(lambda p: p.name == self.param_name, parameters))
             if self._can_provide_data(param):
+                # print("Can provide data")
                 try:
                     indexed_data = self._handle_data(param)
                 except IndexError:
+                    # print("Indexing error")
                     result = None
                 else:
                     result = Parameter(
