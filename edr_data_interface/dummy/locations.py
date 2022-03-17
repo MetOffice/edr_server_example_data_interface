@@ -19,7 +19,7 @@ class Locations(Locations):
         bbox = box(
             bbox_extent["xmin"], bbox_extent["ymin"], bbox_extent["xmax"], bbox_extent["ymax"]
         )
-        geometry = dataset.LOCATIONS[location.id][0]
+        geometry = dataset.LOCATIONS[location.id].geometry
         return bbox.intersects(geometry)
 
     def _datetime_filter(self, location: Feature) -> bool:
