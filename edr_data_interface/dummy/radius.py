@@ -6,18 +6,17 @@ from shapely.geometry import box
 from edr_server.abstract_data_interface.radius import Radius
 from edr_server.abstract_data_interface.locations import Feature
 
+from .import filters
 from .items import Items
 
 
 class Radius(Radius):
+    filter_type = "intersection"
+
     def all_items(self) -> List[Feature]:
         items_provider = Items(self.collection_id, self.query_parameters, "")
         items = items_provider.get_features()
         return list(chain.from_iterable(items.values()))
-
-    def get_collection_bbox(self):
-        from .dataset import COLLECTIONS
-        return COLLECTIONS[self.collection_id]["bbox"]
 
     def polygon_filter(self, items: List[Feature]) -> List[Feature]:
         """
@@ -25,9 +24,10 @@ class Radius(Radius):
         query arguments intersecting with the feature's bounding box.
 
         """
-        result = []
-        for item in items:
-            bbox = box(*item.bbox)
-            if bbox.intersects(self.polygon):
-                result.append(item)
+        if self.filter_type == "intersection":
+            result = filters.intersection_filter(self.polygon, items)
+        elif self.filter_type == "cutout":
+            result = filters.cutout_filter(self.polygon, items)
+        else:
+            raise ValueError(f"Filter type {self.filter_type!r} is not supported.")
         return result
