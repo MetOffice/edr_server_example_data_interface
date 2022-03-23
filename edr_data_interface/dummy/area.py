@@ -11,6 +11,8 @@ from .items import Items
 
 
 class Area(Area):
+    filter_type = "intersection"
+
     def all_items(self) -> List[Feature]:
         items_provider = Items(self.collection_id, self.query_parameters, "")
         items = items_provider.get_features()

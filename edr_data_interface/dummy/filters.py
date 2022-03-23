@@ -5,8 +5,9 @@ from shapely.geometry import box, Polygon
 
 
 def cutout_filter(polygon: Polygon, items: List[Feature]):
+    # We don't want to waste time trying to cut features that don't intersect at all.
     quick_filter_items = intersection_filter(polygon, items)
-    # XXX more filtering here!
+    # XXX more filtering here, including cutting data and modifying `items[i].parameter.values`.
     return quick_filter_items
 
 

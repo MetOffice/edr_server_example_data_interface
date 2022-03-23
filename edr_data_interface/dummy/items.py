@@ -38,12 +38,12 @@ class Items(Items):
         return out_features
 
     def data(self) -> FeatureCollection:
-        features = self._get_features()
+        features = self._build_features()
         n_features = len(features)
         return FeatureCollection(
             links=[],
             number_matched=n_features,
-            number_returned=n_features,
+            number_returned=n_features,  # XXX no pagination.
             timestamp=self._get_timestamp(),
             items=features
         )
