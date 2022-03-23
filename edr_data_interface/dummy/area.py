@@ -25,7 +25,7 @@ class Area(Area):
 
         """
         if self.filter_type == "intersection":
-            result = filters.intersection_filter(self.polygon, items)
+            result = filters.intersection_filter(self.polygon, items, self.items_url)
         elif self.filter_type == "cutout":
             result = filters.cutout_filter(self.polygon, items)
         else:
