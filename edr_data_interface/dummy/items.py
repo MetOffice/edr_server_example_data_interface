@@ -1,5 +1,5 @@
 import re
-from typing import List, Union
+from typing import Dict, List, Union
 from urllib.parse import urljoin
 
 from edr_server.abstract_data_interface.items import (
@@ -11,13 +11,17 @@ from .locations import Location, Locations
 
 
 class Items(Items):
-    def _get_features(self) -> List[Feature]:
+    def get_features(self) -> Dict:
         # Get features to serve as items.
         in_features = {}  # In future more EDR contents than locations (e.g. area, cube) might provide features
         locations_provider = Locations(self.collection_id, self.query_parameters)
         locations = locations_provider.locations_filter(locations_provider.all_locations())
         in_features["locations"] = locations
+        return in_features
 
+    def _build_features(self) -> List[Feature]:
+        # Locate features to serve as items.
+        in_features = self.get_features()
         # Present located features as items.
         out_features = []
         for feature_type, features in in_features.items():
@@ -34,12 +38,12 @@ class Items(Items):
         return out_features
 
     def data(self) -> FeatureCollection:
-        features = self._get_features()
+        features = self._build_features()
         n_features = len(features)
         return FeatureCollection(
             links=[],
             number_matched=n_features,
-            number_returned=n_features,
+            number_returned=n_features,  # XXX no pagination.
             timestamp=self._get_timestamp(),
             items=features
         )
