@@ -1,16 +1,21 @@
 import os
+import glob
 from typing import Dict, List
 
 import iris
 from shapely.geometry import Polygon
 
 
-class DataProvider(object):
-    def __init__(self) -> None:
-        # XXX do this better in future!
-        self.data_path = "/Users/dpeterk/data/3DT/2018_sunderland_fire/basic_name_run"
-        self.data_name = "Fields*.txt"
+def get_files(file_path):
+    files_name = "Fields*.txt"
+    files_list = glob.glob(os.path.join(file_path, files_name))
+    # Return only the file names - these will be used as item IDs.
+    return [os.path.split(f)[-1] for f in files_list]
 
+
+class DataProvider(object):
+    def __init__(self, file_names) -> None:
+        self.file_names = file_names
         self._data = None
 
     @property
@@ -24,7 +29,8 @@ class DataProvider(object):
         self._data = value
 
     def load_data(self):
-        self.data = iris.load(os.path.join(self.data_path, self.data_name))
+        file_paths = [os.path.join(FILE_PATH, f) for f in self.file_names]
+        self.data = iris.load(file_paths)
 
     def get_cube(self, cube_ref):
         """Locate a cube based on its reference (one of its name / 'field name' attribute)."""
@@ -117,7 +123,11 @@ class DataProvider(object):
         return cube.attributes
 
 
-DATA_PROVIDER = DataProvider()
+FILE_PATH = "/Users/dpeterk/data/3DT/2018_sunderland_fire/basic_name_run"
+FILE_ITEMS = get_files(FILE_PATH)
+
+DATA_PROVIDER = DataProvider(FILE_ITEMS)
+DATA = {cube.attributes["Field Name"]: cube for cube in DATA_PROVIDER.data}
 
 
 CATEGORY_ENCODING = {
@@ -131,9 +141,6 @@ CATEGORY_ENCODING = {
     "#9199C9": 0.00001,
     "#838DAB": 0.000032,
 }
-
-
-DATA = {cube.attributes["Field Name"]: cube for cube in DATA_PROVIDER.data}
 
 
 CRS = (
@@ -169,7 +176,7 @@ TEMPORAL_EXTENTS: Dict = {
     "sunderland_09082021_1900Z": {
         "temporal_interval": ["2018-05-14T20:00Z/2018-05-15T19:00Z/PT1H"],
         "temporal_values": DATA_PROVIDER.get_t_coord_values(),
-        "trs": "TIMECRS[\"DateTime\",TDATUM[\"Gregorian Calendar\"],CS[TemporalDateTime,1],AXIS[\"Time (T)\",future]",
+        "trs": "TIMECRS[\"DateTime\",TDATUM[\"Gregorian Calendar\"],CS[TemporalDateTime,1],AXIS[\"Time (T)\",future]]",
         "temporal_name": "",
     },
 }

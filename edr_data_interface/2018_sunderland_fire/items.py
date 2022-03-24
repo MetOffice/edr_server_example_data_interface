@@ -1,3 +1,5 @@
+from collections import namedtuple
+import os
 import re
 from typing import List, Union
 from urllib.parse import urljoin
@@ -5,18 +7,31 @@ from urllib.parse import urljoin
 from edr_server.abstract_data_interface.items import (
     Feature, FeatureCollection, Item, Items, Parameter
 )
+import iris
 
 from . import dataset
 from .locations import Location, Locations
 
 
 class Items(Items):
+    def _get_file_items(self, geom, coords, attributes) -> List:
+        item = namedtuple("item", "id geometry_type coords properties")
+        result = []
+        for filename in dataset.FILE_ITEMS:
+            result.append(item(filename, geom, coords, attributes))
+        return result
+
     def _get_features(self) -> List[Feature]:
         # Get features to serve as items.
         in_features = {}  # In future more EDR contents than locations (e.g. area, cube) might provide features
         locations_provider = Locations(self.collection_id, self.query_parameters)
         locations = locations_provider.locations_filter(locations_provider.all_locations())
         in_features["locations"] = locations
+        # As all the files contribute to the same dataset, we can borrow these for all items.
+        cached_geom = locations[0].geometry_type
+        cached_coords = locations[0].coords
+        cached_attrs = locations[0].properties
+        in_features["items"] = self._get_file_items(cached_geom, cached_coords, cached_attrs)
 
         # Present located features as items.
         out_features = []
@@ -102,3 +117,16 @@ class Item(Item):
                         values=self._prepare_data(indexed_data)
                     )
         return result
+
+    def file_object(self):
+        url, errors = None, None
+        filename = self.item_id
+        filepath = os.path.join(dataset.FILE_PATH, filename)
+        _, filename_ext = os.path.splitext(filename)
+        filename_ext = filename_ext[1:]  # Drop the leading `.` from the extension string.
+        req_ext = self.query_parameters.get("f")
+        print(f"Types: filename - {filename_ext}, request - {req_ext}")
+        if filename_ext != req_ext:
+            errors = f"File extension mismatch - {filename_ext}, {req_ext}"
+            filepath = None
+        return filepath, url, errors
