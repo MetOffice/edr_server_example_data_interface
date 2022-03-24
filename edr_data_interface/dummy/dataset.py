@@ -312,7 +312,7 @@ PARAMETERS_LOCATIONS_LOOKUP = {
 
 LOCATIONS = {
     "50232": {
-        "geometry": Polygon([[51, -3], [51, 0], [54, 0], [54, -3], [51, -3]]),
+        "geometry": Polygon([[-3, 51], [0, 51], [0, 54], [-3, 54], [-3, 51]]),
         "axes": ["x", "y", "t"],
         "axis_x_values": {"start": -3.0, "stop": 0.0, "num": 100},
         "axis_y_values": {"start": 51.0, "stop": 54.0, "num": 100},
@@ -330,7 +330,7 @@ LOCATIONS = {
         ],
     },
     "61812": {
-        "geometry": Polygon([[55, -8], [55, -6], [57, -6], [57, -8], [55, -8]]),
+        "geometry": Polygon([[-8, 55], [-6, 55], [-6, 57], [-8, 57], [-8, 55]]),
         "axes": ["x", "y", "t", "z"],
         "axis_x_values": {"start": -8.0, "stop": -6.0, "num": 25},
         "axis_y_values": {"start": 55.0, "stop": 57.0, "num": 25},
@@ -351,7 +351,7 @@ LOCATIONS = {
         ],
     },
     "61198": {
-        "geometry": Polygon([[55, -8], [55, -6], [57, -6], [57, -8], [55, -8]]),
+        "geometry": Polygon([[-8, 55], [-6, 55], [-6, 57], [-8, 57], [-8, 55]]),
         "axes": ["x", "y", "t", "z"],
         "axis_x_values": {"start": -8.0, "stop": -6.0, "num": 25},
         "axis_y_values": {"start": 55.0, "stop": 57.0, "num": 25},

@@ -9,6 +9,41 @@ from shapely.geometry import box
 from . import dataset
 
 
+class Parameters(object):
+    """Handle construction of data-providing parameters."""
+    def __init__(self, selected_parameters: List, item_url: str) -> None:
+        self.selected_parameters = selected_parameters
+        self.item_url = item_url
+
+    def _tilesets(self, param_name) -> List[Tileset]:
+        """Define tilesets metadata for a specific parameter."""
+        param_metadata = dataset.PARAMETERS[param_name]
+        free_axes = list(set(param_metadata["axes"]) - set(["x", "y"]))
+        tile_shape = [None] * len(param_metadata["axes"])
+        url_extension = ""
+        for free_axis in free_axes:
+            tile_shape[param_metadata["axes"].index(free_axis)] = 1
+            url_extension += f"_{{{free_axis}}}"
+        url_template = urljoin(self.item_url, f"items/{param_name}{url_extension}")
+        return [Tileset(tile_shape, url_template)]
+
+    def _values(self, param_name):
+        return dataset.DATA[param_name]
+
+    def parameters(self) -> List[Parameter]:
+        params = []
+        for parameter_name in self.selected_parameters:
+            metadata = dataset.PARAMETERS[parameter_name]
+            param = Parameter(parameter_name, **metadata)
+            if metadata["value_type"] == "tilesets":
+                tilesets = self._tilesets(parameter_name)
+                param.values = tilesets
+            elif metadata["value_type"] == "values":
+                param.values = self._values(parameter_name)
+            params.append(param)
+        return params
+
+
 class Locations(Locations):
     def __init__(self, collection_id, query_parameters: dict) -> None:
         super().__init__(collection_id, query_parameters)
@@ -19,7 +54,7 @@ class Locations(Locations):
         bbox = box(
             bbox_extent["xmin"], bbox_extent["ymin"], bbox_extent["xmax"], bbox_extent["ymax"]
         )
-        geometry = dataset.LOCATIONS[location.id][0]
+        geometry = dataset.LOCATIONS[location.id].geometry
         return bbox.intersects(geometry)
 
     def _datetime_filter(self, location: Feature) -> bool:
@@ -104,32 +139,13 @@ class Locations(Locations):
 
 
 class Location(Location):
-    def _tilesets(self, param_name) -> List[Tileset]:
-        """Define tilesets metadata for a specific parameter."""
-        param_metadata = dataset.PARAMETERS[param_name]
-        free_axes = list(set(param_metadata["axes"]) - set(["x", "y"]))
-        tile_shape = [None] * len(param_metadata["axes"])
-        url_extension = ""
-        for free_axis in free_axes:
-            tile_shape[param_metadata["axes"].index(free_axis)] = 1
-            url_extension += f"_{{{free_axis}}}"
-        url_template = urljoin(self.items_url, f"items/{param_name}{url_extension}")
-        return [Tileset(tile_shape, url_template)]
-
     def _check_location(self) -> bool:
         return self.location_id in dataset.LOCATIONS.keys()
 
     def parameters(self) -> List[Parameter]:
         selected_parameters = self._parameter_filter(dataset.PARAMETERS_LOCATIONS_LOOKUP[self.location_id])
-        params = []
-        for parameter_name in selected_parameters:
-            metadata = dataset.PARAMETERS[parameter_name]
-            param = Parameter(parameter_name, **metadata)
-            if metadata["value_type"] == "tilesets":
-                tilesets = self._tilesets(parameter_name)
-                param.values = tilesets
-            params.append(param)
-        return params
+        parameter_provider = Parameters(selected_parameters, self.items_url)
+        return parameter_provider.parameters()
 
     def data(self) -> Tuple[Union[Feature, None], Union[str, None]]:
         error = None
