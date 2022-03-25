@@ -1,0 +1,12 @@
+data:
+  source: null
+
+cloud:
+  provider: null
+  object_store_name: null
+  object_store_path: null
+  file_pattern: null
+
+local:
+  path: null
+  file_pattern: null
