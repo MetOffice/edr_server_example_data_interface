@@ -11,6 +11,11 @@ from .items import Items
 
 
 class Position(Position):
+    n_filtered = 0
+
+    def _determine_handler_type(self) -> str:
+        return "domain" if self.n_filtered == 1 else "feature_collection"
+
     def _exact_match(self, point, item):
         """Return only items that are at the exact location specified."""
         if item.geometry_type != "point":
@@ -30,6 +35,10 @@ class Position(Position):
         meth = self._exact_match if self.match == "exact" else self._fuzzy_match
         filtered = filter(lambda item: meth(point, item), items)
         return list(filtered)
+
+    def get_collection_bbox(self):
+        from .dataset import COLLECTIONS
+        return COLLECTIONS[self.collection_id]["bbox"]
 
     def all_items(self) -> List[Feature]:
         items_provider = Items(self.collection_id, self.query_parameters, "")
@@ -54,4 +63,5 @@ class Position(Position):
             result = []
             for point in geometry.geoms:
                 result.extend(self._matcher(point, items))
+        self.n_filtered = len(result)
         return result
