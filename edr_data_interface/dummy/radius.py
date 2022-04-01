@@ -12,6 +12,14 @@ from .items import Items
 
 class Radius(Radius):
     filter_type = "intersection"
+    n_filtered = 0
+
+    def _determine_handler_type(self) -> str:
+        return "domain" if self.n_filtered == 1 else "feature_collection"
+
+    def get_collection_bbox(self):
+        from .dataset import COLLECTIONS
+        return COLLECTIONS[self.collection_id]["bbox"]
 
     def all_items(self) -> List[Feature]:
         items_provider = Items(self.collection_id, self.query_parameters, "")
@@ -30,4 +38,5 @@ class Radius(Radius):
             result = filters.cutout_filter(self.polygon, items)
         else:
             raise ValueError(f"Filter type {self.filter_type!r} is not supported.")
+        self.n_filtered = len(result)
         return result
