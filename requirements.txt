@@ -1,0 +1,2 @@
+edr_server  # https://github.com/ADAQ-AQI/edr_server
+numpy
