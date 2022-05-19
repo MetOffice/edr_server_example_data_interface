@@ -1,22 +1,24 @@
-from edr_server.core import EdrDataInterface, AbstractCollectionsMetadataDataInterface, CollectionId, \
-    CollectionMetadata, CollectionMetadataList
+from edr_server.core import (
+    AbstractCollectionsMetadataDataInterface,
+    CollectionId,
+    CollectionMetadata,
+    CollectionMetadataList,
+    EdrDataInterface,
+)
 from edr_server.core.exceptions import CollectionNotFoundException
-from . import area
-from . import capabilities
-from . import filters
-from . import items
-from . import locations
-from . import position
-from . import radius
-from . import service
+
+from . import area, capabilities, dataset, filters, items, locations, position, radius, service
 
 
 class DummyCollectionsMetadataDataInterface(AbstractCollectionsMetadataDataInterface):
     def all(self) -> CollectionMetadataList:
-        return CollectionMetadataList([])
+        return CollectionMetadataList(list(dataset.COLLECTIONS.values()))
 
     def get(self, collection_id: CollectionId) -> CollectionMetadata:
-        raise CollectionNotFoundException
+        try:
+            return dataset.COLLECTIONS[collection_id]
+        except KeyError:
+            raise CollectionNotFoundException(f"Collection {collection_id!r} doesn't exist")
 
 
 class DummyEdrDataInterface(EdrDataInterface):
@@ -26,11 +28,13 @@ class DummyEdrDataInterface(EdrDataInterface):
     """
 
     collections = DummyCollectionsMetadataDataInterface()
-    area = area
-    capabilities = capabilities
+    Area = area.Area
+    Capabilities = capabilities.Capabilities
     filters = filters
-    items = items
-    locations = locations
-    position = position
-    radius = radius
-    service = service
+    Items = items.Items
+    Item = items.Item
+    Location = locations.Location
+    Locations = locations.Locations
+    Position = position.Position
+    Radius = radius.Radius
+    Service = service.Service

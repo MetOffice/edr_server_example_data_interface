@@ -1,21 +1,26 @@
-from typing import Dict
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-from shapely.geometry import Point, Polygon
+from edr_server.core import CollectionMetadata
+from edr_server.core.models import EdrDataQuery
+from edr_server.core.models.extents import Extents, SpatialExtent, TemporalExtent, VerticalExtent
+from edr_server.core.models.parameters import ObservedProperty, Parameter, Symbol, Unit
+from shapely.geometry import Point, Polygon, box
 
 
 def construct_data_3d(xy, t):
     x = y = np.arange(xy)
     t = np.arange(t)
     tm, ym, xm = np.meshgrid(t, y, x)
-    levels = np.sin(0.5*xm + tm) + np.cos(0.2*ym + 2)
+    levels = np.sin(0.5 * xm + tm) + np.cos(0.2 * ym + 2)
     return levels.transpose(1, 0, 2)  # For whatever reason the dims order isn't (t, y, x).
 
 
 def construct_data_4d(xy, t, z):
     x = y = np.arange(xy, dtype="float")
     t = np.arange(t)
-    z = np.arange(1, z+1)
+    z = np.arange(1, z + 1)
     tm, zm, ym, xm = np.meshgrid(t, z, y, x)
     return np.sin(0.1 * zm * xm * ym + tm)
 
@@ -28,6 +33,7 @@ CATEGORY_ENCODING = {
     "#fff": 80.0,
 }
 
+SUPPORTED_DATA_QUERIES = [query_type for query_type in EdrDataQuery]
 
 DATA = {
     "Parameter 1": construct_data_3d(100, 4),
@@ -42,419 +48,266 @@ DATA = {
     "Parameter 10": np.sin(np.arange(24, dtype="float") * 0.25 - 15),
 }
 
-
-CRS = (
-    "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,"
-    "AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],"
-    "PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],"
-    "UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]]"
-)
-
-
-COLLECTIONS: Dict = {
-    "00001": {
-        "name": "One",
-        "id": "00001",
-        "description": "The first collection",
-        "keywords": ["Example", "Dummy"],
-        "bbox": [-180, -90, 180, 90],
-        "crs": CRS,
-        "crs_name": "WGS 1984",
-    },
-    "00002": {
-        "name": "Two",
-        "id": "00002",
-        "description": "The second collection",
-        "keywords": ["Example", "Dummy"],
-        "bbox": [-180, -90, 180, 90],
-        "crs": CRS,
-        "crs_name": "EPSG4326",
-    },
-    "00003": {
-        "name": "Three",
-        "id": "00003",
-        "description": "The third collection",
-        "keywords": ["Example", "Dummy"],
-        "bbox": [55.4, -3.1, 55.6, -2.9],
-        "crs": CRS,
-        "crs_name": "WGS 1984",
-    },
-    "00004": {
-        "name": "Four",
-        "id": "00004",
-        "description": "The fourth collection",
-        "keywords": ["Example", "Dummy"],
-        "bbox": [50.4, -4.0, 55.5, 1.6],
-        "crs": CRS,
-        "crs_name": "WGS 1984",
-    },
-    "00005": {
-        "name": "Five",
-        "id": "00005",
-        "description": "The fifth collection",
-        "keywords": ["Example", "Dummy"],
-        "bbox": [50.4, -4.0, 55.5, 1.6],
-        "crs": CRS,
-        "crs_name": "WGS 1984",
-    },
+PARAMETERS: Dict[str, Tuple[Dict[str, Any], Optional[Parameter]]] = {
+    "Parameter 1": (
+        {
+            "id": "param1",
+            "description": "The first dummy parameter",
+            "type": "TiledNdArray",
+            "dtype": DATA["Parameter 1"].dtype.name,
+            "axes": ["t", "y", "x"],
+            "shape": [4, 100, 100],
+            "value_type": "tilesets",
+            "values": [],
+            "unit": "m s-1",
+            "unit_label": "m/s",
+            "unit_type": "http://www.example.com/define/unit/ms-1",
+            "phenomenon_id": "http://www.example.com/phenom/dummy_1",
+            "phenomenon": "Dummy 1",
+            "category_encoding": CATEGORY_ENCODING,
+        },
+        Parameter(
+            id="param1",
+            label="Parameter 1",
+            description="The first dummy parameter",
+            unit=Unit("meters per second", Symbol("m/s")),
+            observed_property=ObservedProperty("Airspeed velocity of an unladen swallow (European)"),
+            data_type=DATA["Parameter 1"].dtype.type,
+        )
+    ),
+    "Parameter 2": (
+        {
+            "id": "param2",
+            "description": "The second dummy parameter",
+            "type": "TiledNdArray",
+            "dtype": DATA["Parameter 2"].dtype.name,
+            "axes": ["t", "y", "x"],
+            "shape": [4, 100, 100],
+            "value_type": "tilesets",
+            "values": [],
+            "unit": "K",
+            "unit_label": "K",
+            "unit_type": "http://www.example.com/define/unit/K",
+            "phenomenon_id": "http://www.example.com/phenom/dummy_2",
+            "phenomenon": "Dummy 2",
+        },
+        Parameter(
+            id="param2",
+            label="Parameter 2",
+            description="The second dummy parameter",
+            unit=Unit("Kelvin", Symbol("K")),
+            observed_property=ObservedProperty("Body temperature of an unladen swallow (European)"),
+            data_type=DATA["Parameter 2"].dtype.type,
+        )
+    ),
+    "Parameter 3": (
+        {
+            "id": "param3",
+            "description": "The third dummy parameter",
+            "type": "TiledNdArray",
+            "dtype": DATA["Parameter 3"].dtype.name,
+            "axes": ["t", "y", "x"],
+            "shape": [4, 100, 100],
+            "value_type": "tilesets",
+            "values": [],
+            "unit": "m s-1",
+            "unit_label": "m/s",
+            "unit_type": "http://www.example.com/define/unit/ms-1",
+            "phenomenon_id": "http://www.example.com/phenom/dummy_1",
+            "phenomenon": "Dummy 1",
+            "measurement_type_method": "average",
+            "measurement_type_period": "PT6H",
+            "category_encoding": CATEGORY_ENCODING,
+        },
+        Parameter(
+            id="param3",
+            label="Parameter 3",
+            description="The third dummy parameter",
+            unit=Unit("meters per second", Symbol("m/s")),
+            observed_property=ObservedProperty("Airspeed velocity of an unladen swallow (African)"),
+            data_type=DATA["Parameter 3"].dtype.type,
+        )
+    ),
+    "Parameter 4": (
+        {
+            "id": "param4",
+            "description": "The fourth dummy parameter",
+            "type": "TiledNdArray",
+            "dtype": DATA["Parameter 4"].dtype.name,
+            "axes": ["t", "z", "y", "x"],
+            "shape": [31, 9, 25, 25],
+            "value_type": "tilesets",
+            "values": [],
+            "unit": "K",
+            "unit_label": "K",
+            "unit_type": "http://www.example.com/define/unit/K",
+            "phenomenon_id": "http://www.example.com/phenom/dummy_2",
+            "phenomenon": "Dummy 2",
+        },
+        Parameter(
+            id="param4",
+            label="Parameter 4",
+            description="The fourth dummy parameter",
+            unit=Unit("Kelvin", Symbol("K")),
+            observed_property=ObservedProperty("Body temperature of an unladen swallow (African)"),
+            data_type=DATA["Parameter 4"].dtype.type,
+        )
+    ),
+    "Parameter 5": (
+        {
+            "id": "param5",
+            "description": "The fifth dummy parameter",
+            "type": "TiledNdArray",
+            "dtype": DATA["Parameter 5"].dtype.name,
+            "axes": ["t", "z", "y", "x"],
+            "shape": [31, 9, 25, 25],
+            "value_type": "tilesets",
+            "values": [],
+            "unit": "%",
+            "unit_label": "%RH",
+            "unit_type": "http://www.example.com/define/unit/percent",
+            "phenomenon_id": "http://www.example.com/phenom/dummy_5",
+            "phenomenon": "Dummy 5",
+            "measurement_type_method": "average",
+            "measurement_type_period": "PT6H",
+        },
+        Parameter(
+            id="param5",
+            label="Parameter 5",
+            description="The fifth dummy parameter",
+            unit=Unit("%RH", Symbol("%")),
+            observed_property=ObservedProperty("Relative Humidity"),
+            data_type=DATA["Parameter 5"].dtype.type,
+        )
+    ),
+    "Parameter 6": (
+        {
+            "id": "param6",
+            "description": "The sixth dummy parameter",
+            "type": "NdArray",
+            "dtype": DATA["Parameter 6"].dtype.name,
+            "axes": ["t"],
+            "shape": [24],
+            "value_type": "values",
+            "values": list(DATA["Parameter 6"]),
+            "unit": "K",
+            "unit_label": "K",
+            "unit_type": "http://www.example.com/define/unit/K",
+            "phenomenon_id": "http://www.example.com/phenom/dummy_2",
+            "phenomenon": "Dummy 2",
+        },
+        Parameter(
+            id="param6",
+            label="Parameter 6",
+            description="The sixth dummy parameter",
+            unit=Unit("Kelvin", Symbol("K")),
+            observed_property=ObservedProperty("Body temperature of a Norwegian Blue parrot (Deceased)"),
+            data_type=DATA["Parameter 6"].dtype.type,
+        )
+    ),
+    "Parameter 7": (
+        {
+            "id": "param7",
+            "description": "The seventh dummy parameter",
+            "type": "NdArray",
+            "dtype": DATA["Parameter 7"].dtype.name,
+            "axes": ["t", "z"],
+            "shape": [31, 2],
+            "value_type": "values",
+            "values": [],
+            "unit": "K",
+            "unit_label": "K",
+            "unit_type": "http://www.example.com/define/unit/K",
+            "phenomenon_id": "http://www.example.com/phenom/dummy_2",
+            "phenomenon": "Dummy 2",
+        },
+        Parameter(
+            id="param7",
+            label="Parameter 7",
+            description="The seventh dummy parameter",
+            unit=Unit("Kelvin", Symbol("K")),
+            observed_property=ObservedProperty("Body temperature of a Norwegian Blue parrot (Sleeping)"),
+            data_type=DATA["Parameter 7"].dtype.type,
+        )
+    ),
+    "Parameter 8": (
+        {
+            "id": "param8",
+            "description": "The eighth dummy parameter",
+            "type": "NdArray",
+            "dtype": DATA["Parameter 8"].dtype.name,
+            "axes": ["t", "z"],
+            "shape": [31, 2],
+            "value_type": "values",
+            "values": [],
+            "unit": "%",
+            "unit_label": "%RH",
+            "unit_type": "http://www.example.com/define/unit/percent",
+            "phenomenon_id": "http://www.example.com/phenom/dummy_5",
+            "phenomenon": "Dummy 5",
+        },
+        Parameter(
+            id="param8",
+            label="Parameter 8",
+            description="The eighth dummy parameter",
+            unit=Unit("%RH", Symbol("%")),
+            observed_property=ObservedProperty("Relative Humidity of a Norwegian Blue parrot in a stuffy room"),
+            data_type=DATA["Parameter 8"].dtype.type,
+        )
+    ),
+    "Parameter 9": (
+        {
+            "id": "param9",
+            "description": "The ninth dummy parameter",
+            "type": "NdArray",
+            "dtype": DATA["Parameter 9"].dtype.name,
+            "axes": ["t"],
+            "shape": [31],
+            "value_type": "values",
+            "values": [],
+            "unit": "m s-1",
+            "unit_label": "m/s",
+            "unit_type": "http://www.example.com/define/unit/ms-1",
+            "phenomenon_id": "http://www.example.com/phenom/dummy_1",
+            "phenomenon": "Dummy 1",
+        },
+        Parameter(
+            id="param9",
+            label="Parameter 9",
+            description="The ninth dummy parameter",
+            unit=Unit("meters per second", Symbol("m/s")),
+            observed_property=ObservedProperty("Wind Speed"),
+            data_type=DATA["Parameter 9"].dtype.type,
+        )
+    ),
+    "Parameter 10": (
+        {
+            "id": "param10",
+            "description": "The seventh dummy parameter",
+            "type": "NdArray",
+            "dtype": DATA["Parameter 10"].dtype.name,
+            "axes": ["t"],
+            "shape": [31],
+            "value_type": "values",
+            "values": [],
+            "unit": "deg",
+            "unit_label": "deg",
+            "unit_type": "http://www.example.com/define/unit/degrees",
+            "phenomenon_id": "http://www.example.com/phenom/dummy_10",
+            "phenomenon": "Dummy 10",
+        },
+        Parameter(
+            id="param10",
+            label="Parameter 10",
+            description="The tenth dummy parameter",
+            unit=Unit("Degrees Celsius", Symbol("Cel")),
+            observed_property=ObservedProperty("Temperature"),
+            data_type=DATA["Parameter 10"].dtype.type,
+        )
+    ),
 }
 
-
-TEMPORAL_EXTENTS: Dict = {
-    "00001": {
-        "temporal_interval": ["2021-01-01T00:00:00Z/2021-02-01T00:00:00Z/PT6H"],
-        "temporal_values": [
-            "2021-01-01T00:00:00Z",
-            "2021-01-01T06:00:00Z",
-            "2021-01-01T12:00:00Z",
-            "2021-01-01T18:00:00Z",
-        ],
-        "trs": "TIMECRS[\"DateTime\",TDATUM[\"Gregorian Calendar\"],CS[TemporalDateTime,1],AXIS[\"Time (T)\",future]",
-        "temporal_name": "Dummy temporal extent",
-    },
-    "00002": {
-        "temporal_interval": ["2020-08-01T12:00:00Z/2020-08-31T12:00:00Z/PT1D"],
-        "temporal_values": [
-            "2020-08-01T12:00:00Z",
-            "2020-08-02T12:00:00Z",
-            "2020-08-03T12:00:00Z",
-            "2020-08-04T12:00:00Z",
-            "2020-08-05T12:00:00Z",
-            "2020-08-06T12:00:00Z",
-            "2020-08-07T12:00:00Z",
-            "2020-08-08T12:00:00Z",
-            "2020-08-09T12:00:00Z",
-            "2020-08-10T12:00:00Z",
-            "2020-08-11T12:00:00Z",
-            "2020-08-12T12:00:00Z",
-            "2020-08-13T12:00:00Z",
-            "2020-08-14T12:00:00Z",
-            "2020-08-15T12:00:00Z",
-            "2020-08-16T12:00:00Z",
-            "2020-08-17T12:00:00Z",
-            "2020-08-18T12:00:00Z",
-            "2020-08-19T12:00:00Z",
-            "2020-08-20T12:00:00Z",
-            "2020-08-21T12:00:00Z",
-            "2020-08-22T12:00:00Z",
-            "2020-08-23T12:00:00Z",
-            "2020-08-24T12:00:00Z",
-            "2020-08-25T12:00:00Z",
-            "2020-08-26T12:00:00Z",
-            "2020-08-27T12:00:00Z",
-            "2020-08-28T12:00:00Z",
-            "2020-08-29T12:00:00Z",
-            "2020-08-30T12:00:00Z",
-            "2020-08-31T12:00:00Z",
-        ],
-        "trs": "TIMECRS[\"DateTime\",TDATUM[\"Gregorian Calendar\"],CS[TemporalDateTime,1],AXIS[\"Time (T)\",future]",
-        "temporal_name": "Dummy temporal extent",
-    },
-    "00003": {
-        "temporal_interval": ["2021-06-30T00:00:00Z/2021-07-01T00:00:00Z/PT1H"],
-        "temporal_values": [
-            "2021-06-30T00:00:00Z",
-            "2021-06-30T01:00:00Z",
-            "2021-06-30T02:00:00Z",
-            "2021-06-30T03:00:00Z",
-            "2021-06-30T04:00:00Z",
-            "2021-06-30T05:00:00Z",
-            "2021-06-30T06:00:00Z",
-            "2021-06-30T07:00:00Z",
-            "2021-06-30T08:00:00Z",
-            "2021-06-30T09:00:00Z",
-            "2021-06-30T10:00:00Z",
-            "2021-06-30T11:00:00Z",
-            "2021-06-30T12:00:00Z",
-            "2021-06-30T13:00:00Z",
-            "2021-06-30T14:00:00Z",
-            "2021-06-30T15:00:00Z",
-            "2021-06-30T16:00:00Z",
-            "2021-06-30T17:00:00Z",
-            "2021-06-30T18:00:00Z",
-            "2021-06-30T19:00:00Z",
-            "2021-06-30T20:00:00Z",
-            "2021-06-30T21:00:00Z",
-            "2021-06-30T22:00:00Z",
-            "2021-06-30T23:00:00Z",
-        ],
-        "trs": "TIMECRS[\"DateTime\",TDATUM[\"Gregorian Calendar\"],CS[TemporalDateTime,1],AXIS[\"Time (T)\",future]",
-        "temporal_name": "Dummy temporal extent",
-    },
-    "00004": {
-        "temporal_interval": ["2020-08-01T12:00:00Z/2020-08-31T12:00:00Z/PT1D"],
-        "temporal_values": [
-            "2020-08-01T12:00:00Z",
-            "2020-08-02T12:00:00Z",
-            "2020-08-03T12:00:00Z",
-            "2020-08-04T12:00:00Z",
-            "2020-08-05T12:00:00Z",
-            "2020-08-06T12:00:00Z",
-            "2020-08-07T12:00:00Z",
-            "2020-08-08T12:00:00Z",
-            "2020-08-09T12:00:00Z",
-            "2020-08-10T12:00:00Z",
-            "2020-08-11T12:00:00Z",
-            "2020-08-12T12:00:00Z",
-            "2020-08-13T12:00:00Z",
-            "2020-08-14T12:00:00Z",
-            "2020-08-15T12:00:00Z",
-            "2020-08-16T12:00:00Z",
-            "2020-08-17T12:00:00Z",
-            "2020-08-18T12:00:00Z",
-            "2020-08-19T12:00:00Z",
-            "2020-08-20T12:00:00Z",
-            "2020-08-21T12:00:00Z",
-            "2020-08-22T12:00:00Z",
-            "2020-08-23T12:00:00Z",
-            "2020-08-24T12:00:00Z",
-            "2020-08-25T12:00:00Z",
-            "2020-08-26T12:00:00Z",
-            "2020-08-27T12:00:00Z",
-            "2020-08-28T12:00:00Z",
-            "2020-08-29T12:00:00Z",
-            "2020-08-30T12:00:00Z",
-            "2020-08-31T12:00:00Z",
-        ],
-        "trs": "TIMECRS[\"DateTime\",TDATUM[\"Gregorian Calendar\"],CS[TemporalDateTime,1],AXIS[\"Time (T)\",future]",
-        "temporal_name": "Dummy temporal extent",
-    },
-    "00005": {
-        "temporal_interval": ["2020-08-01T12:00:00Z/2020-08-31T12:00:00Z/PT1D"],
-        "temporal_values": [
-            "2020-08-01T12:00:00Z",
-            "2020-08-02T12:00:00Z",
-            "2020-08-03T12:00:00Z",
-            "2020-08-04T12:00:00Z",
-            "2020-08-05T12:00:00Z",
-            "2020-08-06T12:00:00Z",
-            "2020-08-07T12:00:00Z",
-            "2020-08-08T12:00:00Z",
-            "2020-08-09T12:00:00Z",
-            "2020-08-10T12:00:00Z",
-            "2020-08-11T12:00:00Z",
-            "2020-08-12T12:00:00Z",
-            "2020-08-13T12:00:00Z",
-            "2020-08-14T12:00:00Z",
-            "2020-08-15T12:00:00Z",
-            "2020-08-16T12:00:00Z",
-            "2020-08-17T12:00:00Z",
-            "2020-08-18T12:00:00Z",
-            "2020-08-19T12:00:00Z",
-            "2020-08-20T12:00:00Z",
-            "2020-08-21T12:00:00Z",
-            "2020-08-22T12:00:00Z",
-            "2020-08-23T12:00:00Z",
-            "2020-08-24T12:00:00Z",
-            "2020-08-25T12:00:00Z",
-            "2020-08-26T12:00:00Z",
-            "2020-08-27T12:00:00Z",
-            "2020-08-28T12:00:00Z",
-            "2020-08-29T12:00:00Z",
-            "2020-08-30T12:00:00Z",
-            "2020-08-31T12:00:00Z",
-        ],
-        "trs": "TIMECRS[\"DateTime\",TDATUM[\"Gregorian Calendar\"],CS[TemporalDateTime,1],AXIS[\"Time (T)\",future]",
-        "temporal_name": "Dummy temporal extent",
-    },
-}
-
-
-VERTICAL_EXTENTS: Dict = {
-    "00001": {
-        "vertical_interval": [],
-        "vertical_values": [],
-        "vrs": "VERTCS",
-        "vertical_name": "Empty dummy vertical extent"
-    },
-    "00002": {
-        "vertical_interval": ["2", "10"],
-        "vertical_values": ["2", "3", "4", "5", "6", "7", "8", "9", "10"],
-        "vrs": "VERTCS",
-        "vertical_name": "Dummy vertical extent",
-    },
-    "00003": {
-        "vertical_interval": [],
-        "vertical_values": [],
-        "vrs": "VERTCS",
-        "vertical_name": "Empty dummy vertical extent"
-    },
-    "00004": {
-        "vertical_interval": ["2", "10"],
-        "vertical_values": ["2", "10"],
-        "vrs": "VERTCS",
-        "vertical_name": "Dummy vertical extent",
-    },
-    "00005": {
-        "vertical_interval": ["2"],
-        "vertical_values": ["2"],
-        "vrs": "VERTCS",
-        "vertical_name": "Dummy vertical extent",
-    },
-}
-
-
-PARAMETERS: Dict = {
-    "Parameter 1": {
-        "id": "param1",
-        "description": "The first dummy parameter",
-        "type": "TiledNdArray",
-        "dtype": DATA["Parameter 1"].dtype.name,
-        "axes": ["t", "y", "x"],
-        "shape": [4, 100, 100],
-        "value_type": "tilesets",
-        "values": [],
-        "unit": "m s-1",
-        "unit_label": "m/s",
-        "unit_type": "http://www.example.com/define/unit/ms-1",
-        "phenomenon_id": "http://www.example.com/phenom/dummy_1",
-        "phenomenon": "Dummy 1",
-        "category_encoding": CATEGORY_ENCODING,
-    },
-    "Parameter 2": {
-        "id": "param2",
-        "description": "The second dummy parameter",
-        "type": "TiledNdArray",
-        "dtype": DATA["Parameter 2"].dtype.name,
-        "axes": ["t", "y", "x"],
-        "shape": [4, 100, 100],
-        "value_type": "tilesets",
-        "values": [],
-        "unit": "K",
-        "unit_label": "K",
-        "unit_type": "http://www.example.com/define/unit/K",
-        "phenomenon_id": "http://www.example.com/phenom/dummy_2",
-        "phenomenon": "Dummy 2",
-    },
-    "Parameter 3": {
-        "id": "param3",
-        "description": "The third dummy parameter",
-        "type": "TiledNdArray",
-        "dtype": DATA["Parameter 3"].dtype.name,
-        "axes": ["t", "y", "x"],
-        "shape": [4, 100, 100],
-        "value_type": "tilesets",
-        "values": [],
-        "unit": "m s-1",
-        "unit_label": "m/s",
-        "unit_type": "http://www.example.com/define/unit/ms-1",
-        "phenomenon_id": "http://www.example.com/phenom/dummy_1",
-        "phenomenon": "Dummy 1",
-        "measurement_type_method": "average",
-        "measurement_type_period": "PT6H",
-        "category_encoding": CATEGORY_ENCODING,
-    },
-    "Parameter 4": {
-        "id": "param4",
-        "description": "The fourth dummy parameter",
-        "type": "TiledNdArray",
-        "dtype": DATA["Parameter 4"].dtype.name,
-        "axes": ["t", "z", "y", "x"],
-        "shape": [31, 9, 25, 25],
-        "value_type": "tilesets",
-        "values": [],
-        "unit": "K",
-        "unit_label": "K",
-        "unit_type": "http://www.example.com/define/unit/K",
-        "phenomenon_id": "http://www.example.com/phenom/dummy_2",
-        "phenomenon": "Dummy 2",
-    },
-    "Parameter 5": {
-        "id": "param5",
-        "description": "The fifth dummy parameter",
-        "type": "TiledNdArray",
-        "dtype": DATA["Parameter 5"].dtype.name,
-        "axes": ["t", "z", "y", "x"],
-        "shape": [31, 9, 25, 25],
-        "value_type": "tilesets",
-        "values": [],
-        "unit": "%",
-        "unit_label": "%RH",
-        "unit_type": "http://www.example.com/define/unit/percent",
-        "phenomenon_id": "http://www.example.com/phenom/dummy_5",
-        "phenomenon": "Dummy 5",
-        "measurement_type_method": "average",
-        "measurement_type_period": "PT6H",
-    },
-    "Parameter 6": {
-        "id": "param6",
-        "description": "The sixth dummy parameter",
-        "type": "NdArray",
-        "dtype": DATA["Parameter 6"].dtype.name,
-        "axes": ["t"],
-        "shape": [24],
-        "value_type": "values",
-        "values": list(DATA["Parameter 6"]),
-        "unit": "K",
-        "unit_label": "K",
-        "unit_type": "http://www.example.com/define/unit/K",
-        "phenomenon_id": "http://www.example.com/phenom/dummy_2",
-        "phenomenon": "Dummy 2",
-    },
-    "Parameter 7": {
-        "id": "param7",
-        "description": "The seventh dummy parameter",
-        "type": "NdArray",
-        "dtype": DATA["Parameter 7"].dtype.name,
-        "axes": ["t", "z"],
-        "shape": [31, 2],
-        "value_type": "values",
-        "values": [],
-        "unit": "K",
-        "unit_label": "K",
-        "unit_type": "http://www.example.com/define/unit/K",
-        "phenomenon_id": "http://www.example.com/phenom/dummy_2",
-        "phenomenon": "Dummy 2",
-    },
-    "Parameter 8": {
-        "id": "param8",
-        "description": "The eighth dummy parameter",
-        "type": "NdArray",
-        "dtype": DATA["Parameter 8"].dtype.name,
-        "axes": ["t", "z"],
-        "shape": [31, 2],
-        "value_type": "values",
-        "values": [],
-        "unit": "%",
-        "unit_label": "%RH",
-        "unit_type": "http://www.example.com/define/unit/percent",
-        "phenomenon_id": "http://www.example.com/phenom/dummy_5",
-        "phenomenon": "Dummy 5",
-    },
-    "Parameter 9": {
-        "id": "param9",
-        "description": "The ninth dummy parameter",
-        "type": "NdArray",
-        "dtype": DATA["Parameter 9"].dtype.name,
-        "axes": ["t"],
-        "shape": [31],
-        "value_type": "values",
-        "values": [],
-        "unit": "m s-1",
-        "unit_label": "m/s",
-        "unit_type": "http://www.example.com/define/unit/ms-1",
-        "phenomenon_id": "http://www.example.com/phenom/dummy_1",
-        "phenomenon": "Dummy 1",
-    },
-    "Parameter 10": {
-        "id": "param10",
-        "description": "The seventh dummy parameter",
-        "type": "NdArray",
-        "dtype": DATA["Parameter 10"].dtype.name,
-        "axes": ["t"],
-        "shape": [31],
-        "value_type": "values",
-        "values": [],
-        "unit": "deg",
-        "unit_label": "deg",
-        "unit_type": "http://www.example.com/define/unit/degrees",
-        "phenomenon_id": "http://www.example.com/phenom/dummy_10",
-        "phenomenon": "Dummy 10",
-    },
-}
-
-
-PARAMETERS_COLLECTIONS_LOOKUP = {
+PARAMETERS_COLLECTIONS_LOOKUP: Dict[str, List[str]] = {
     "00001": ["Parameter 1", "Parameter 2", "Parameter 3"],
     "00002": ["Parameter 4", "Parameter 5"],
     "00003": ["Parameter 6"],
@@ -462,17 +315,137 @@ PARAMETERS_COLLECTIONS_LOOKUP = {
     "00005": ["Parameter 9", "Parameter 10"],  # 10m only
 }
 
+COLLECTIONS: Dict[str, CollectionMetadata] = {
+    "00001": CollectionMetadata(
+        title="One",
+        id="00001",
+        description="The first collection",
+        keywords=["Example", "Dummy"],
+        extent=Extents(
+            spatial=SpatialExtent(box(-180, -90, 180, 90)),
+            temporal=TemporalExtent(
+                values=[
+                    datetime(2021, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+                    datetime(2021, 1, 1, 6, 0, 0, tzinfo=timezone.utc),
+                    datetime(2021, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+                    datetime(2021, 1, 1, 18, 0, 0, tzinfo=timezone.utc),
+                ]
+            ),
+            vertical=None
+        ),
+        supported_data_queries=SUPPORTED_DATA_QUERIES,
+        output_formats=["application/prs.coverage+json"],
+        parameters=[PARAMETERS[param_id][1] for param_id in PARAMETERS_COLLECTIONS_LOOKUP["00001"]],
+    ),
+    "00002": CollectionMetadata(
+        title="Two",
+        id="00002",
+        description="The second collection",
+        keywords=["Example", "Dummy"],
+        extent=Extents(
+            spatial=SpatialExtent(box(-180, -90, 180, 90)),
+            temporal=TemporalExtent(
+                values=[
+                    datetime(2020, 8, 1, 12, 0, 0, tzinfo=timezone.utc) + timedelta(days=days) for days in range(32)
+                ]
+            ),
+            vertical=VerticalExtent([2, 3, 4, 5, 6, 7, 8, 9, 10])
+        ),
+        supported_data_queries=SUPPORTED_DATA_QUERIES,
+        output_formats=["application/prs.coverage+json"],
+        parameters=[PARAMETERS[param_id][1] for param_id in PARAMETERS_COLLECTIONS_LOOKUP["00002"]],
+    ),
+    "00003": CollectionMetadata(
+        title="Three",
+        id="00003",
+        description="The third collection",
+        keywords=["Example", "Dummy"],
+        extent=Extents(
+            spatial=SpatialExtent(box(55.4, -3.1, 55.6, -2.9)),
+            temporal=TemporalExtent(
+                values=[
+                    datetime(2021, 6, 30, 0, 0, 0, tzinfo=timezone.utc) + timedelta(hours=hours) for hours in range(24)
+                ]
+            ),
+            vertical=None
+        ),
+        supported_data_queries=SUPPORTED_DATA_QUERIES,
+        output_formats=["application/prs.coverage+json"],
+        parameters=[PARAMETERS[param_id][1] for param_id in PARAMETERS_COLLECTIONS_LOOKUP["00003"]],
+    ),
+    "00004": CollectionMetadata(
+        title="Four",
+        id="00004",
+        description="The fourth collection",
+        keywords=["Example", "Dummy"],
+        extent=Extents(
+            spatial=SpatialExtent(box(50.4, -4.0, 55.5, 1.6)),
+            temporal=TemporalExtent(
+                values=[
+                    datetime(2020, 8, 1, 12, 0, 0, tzinfo=timezone.utc) + timedelta(days=days) for days in range(32)
+                ]
+            ),
+            vertical=VerticalExtent([2, 10])
+        ),
+        supported_data_queries=SUPPORTED_DATA_QUERIES,
+        output_formats=["application/prs.coverage+json"],
+        parameters=[PARAMETERS[param_id][1] for param_id in PARAMETERS_COLLECTIONS_LOOKUP["00004"]],
 
-LOCATIONS_COLLECTIONS_LOOKUP = {
+    ),
+    "00005": CollectionMetadata(
+        title="Five",
+        id="00005",
+        description="The fifth collection",
+        keywords=["Example", "Dummy"],
+        extent=Extents(
+            spatial=SpatialExtent(box(50.4, -4.0, 55.5, 1.6)),
+            temporal=TemporalExtent(
+                values=[
+                    datetime(2020, 8, 1, 12, 0, 0, tzinfo=timezone.utc) + timedelta(days=days) for days in range(32)
+                ]
+            ),
+            vertical=VerticalExtent([2])
+        ),
+        supported_data_queries=SUPPORTED_DATA_QUERIES,
+        output_formats=["application/prs.coverage+json"],
+        parameters=[PARAMETERS[param_id][1] for param_id in PARAMETERS_COLLECTIONS_LOOKUP["00005"]],
+    ),
+}
+
+TEMPORAL_EXTENTS: Dict[str, Dict[str, Any]] = {
+    collection_id: {
+        "temporal_interval": [COLLECTIONS[collection_id].extent.temporal.bounds],
+        "temporal_values": [dt.isoformat() for dt in COLLECTIONS[collection_id].extent.temporal.values],
+        "trs": str(COLLECTIONS[collection_id].extent.temporal.trs),
+        "temporal_name": COLLECTIONS[collection_id].extent.temporal.trs.name,
+    }
+    for collection_id in COLLECTIONS
+}
+
+VERTICAL_EXTENTS: Dict[str, Dict[str, Any]] = {
+    collection_id: {
+        "vertical_interval": list(map(str, COLLECTIONS[collection_id].extent.vertical.bounds)),
+        "vertical_values": list(map(str, COLLECTIONS[collection_id].extent.vertical.values)),
+        "vrs": str(COLLECTIONS[collection_id].extent.vertical.vrs),
+        "vertical_name": COLLECTIONS[collection_id].extent.vertical.vrs.name
+    }
+    for collection_id in COLLECTIONS
+    if COLLECTIONS[collection_id].extent.vertical
+}
+
+LOCATIONS_COLLECTIONS_LOOKUP: Dict[str, List[str]] = {
     "00001": ["50232"],
     "00002": ["61812", "61198"],
     "00003": ["25364"],
-    "00004": ["mast1", "mast2", "mast3", "mast4", "mast5", "mast6", "mast7", "mast8", "mast9", "mast10", "mast11", "mast12"],
-    "00005": ["mast1", "mast2", "mast3", "mast4", "mast5", "mast6", "mast7", "mast8", "mast9", "mast10", "mast11", "mast12"],
+    "00004": [
+        "mast1", "mast2", "mast3", "mast4", "mast5", "mast6", "mast7", "mast8", "mast9", "mast10", "mast11", "mast12"
+    ],
+    "00005": [
+        "mast1", "mast2", "mast3", "mast4", "mast5", "mast6", "mast7", "mast8", "mast9", "mast10", "mast11", "mast12"
+    ],
 }
 
-
-PARAMETERS_LOCATIONS_LOOKUP = {
+PARAMETERS_LOCATIONS_LOOKUP: Dict[str, List[str]] = {
     "50232": ["Parameter 1", "Parameter 2", "Parameter 3"],
     "61812": ["Parameter 4"],
     "61198": ["Parameter 4", "Parameter 5"],
@@ -491,8 +464,7 @@ PARAMETERS_LOCATIONS_LOOKUP = {
     "mast12": ["Parameter 7", "Parameter 8", "Parameter 9", "Parameter 10"],
 }
 
-
-LOCATIONS = {
+LOCATIONS: Dict[str, Dict[str, Any]] = {
     "50232": {
         "geometry": Polygon([[-3, 51], [0, 51], [0, 54], [-3, 54], [-3, 51]]),
         "axes": ["x", "y", "t"],
@@ -507,7 +479,8 @@ LOCATIONS = {
             "description": "A location",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
         ],
     },
@@ -527,7 +500,8 @@ LOCATIONS = {
             "description": "A classic polygon",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "gregorian"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -548,7 +522,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "gregorian"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -567,7 +542,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
         ],
     },
@@ -586,7 +562,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -606,7 +583,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -626,7 +604,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -646,7 +625,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -666,7 +646,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -686,7 +667,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -706,7 +688,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -726,7 +709,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -746,7 +730,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -766,7 +751,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -786,7 +772,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],
@@ -806,7 +793,8 @@ LOCATIONS = {
             "description": "A point location over a timeseries",
         },
         "referencing": [
-            {"coords": ["x", "y"], "system_type": "GeographicCRS", "system_id": "http://www.example.com/define/crs/geog_crs"},
+            {"coords": ["x", "y"], "system_type": "GeographicCRS",
+             "system_id": "http://www.example.com/define/crs/geog_crs"},
             {"coords": ["t"], "system_type": "TemporalRS", "system_calendar": "standard"},
             {"coords": ["z"], "system_type": "VerticalRS", "system_id": "http://www.example.com/define/crs/vert_rs"},
         ],

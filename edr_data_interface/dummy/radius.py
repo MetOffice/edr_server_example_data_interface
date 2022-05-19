@@ -1,12 +1,10 @@
 from itertools import chain
 from typing import List
 
-from shapely.geometry import box
-
-from edr_server.abstract_data_interface.radius import Radius
 from edr_server.abstract_data_interface.locations import Feature
+from edr_server.abstract_data_interface.radius import Radius
 
-from .import filters
+from . import filters
 from .items import Items
 
 

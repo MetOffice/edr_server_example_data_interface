@@ -2,9 +2,7 @@ import re
 from typing import Dict, List, Union
 from urllib.parse import urljoin
 
-from edr_server.abstract_data_interface.items import (
-    Feature, FeatureCollection, Item, Items, Parameter
-)
+from edr_server.abstract_data_interface.items import Feature, FeatureCollection, Item, Items, Parameter
 
 from . import dataset
 from .locations import Location, Locations

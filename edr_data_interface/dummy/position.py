@@ -1,11 +1,10 @@
 from itertools import chain
 from typing import List, Union
 
-from shapely.geometry import box
 import shapely.wkt as wkt
-
-from edr_server.abstract_data_interface.position import Position
 from edr_server.abstract_data_interface.locations import Feature
+from edr_server.abstract_data_interface.position import Position
+from shapely.geometry import box
 
 from .items import Items
 

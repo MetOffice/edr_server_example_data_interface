@@ -1,9 +1,7 @@
 from typing import List, Tuple, Union
 from urllib.parse import urljoin
 
-from edr_server.abstract_data_interface.locations import (
-    Feature, Location, Locations, Parameter, Referencing, Tileset
-)
+from edr_server.abstract_data_interface.locations import Feature, Location, Locations, Parameter, Referencing, Tileset
 from shapely.geometry import box
 
 from . import dataset
@@ -17,8 +15,8 @@ class Parameters(object):
 
     def _tilesets(self, param_name) -> List[Tileset]:
         """Define tilesets metadata for a specific parameter."""
-        param_metadata = dataset.PARAMETERS[param_name]
-        free_axes = list(set(param_metadata["axes"]) - set(["x", "y"]))
+        param_metadata = dataset.PARAMETERS[param_name][0]
+        free_axes = list(set(param_metadata["axes"]) - {"x", "y"})
         tile_shape = [None] * len(param_metadata["axes"])
         url_extension = ""
         for free_axis in free_axes:
@@ -34,11 +32,11 @@ class Parameters(object):
         params = []
         for parameter_name in self.selected_parameters:
             metadata = dataset.PARAMETERS[parameter_name]
-            param = Parameter(parameter_name, **metadata)
-            if metadata["value_type"] == "tilesets":
+            param = Parameter(parameter_name, **metadata[0])
+            if metadata[0]["value_type"] == "tilesets":
                 tilesets = self._tilesets(parameter_name)
                 param.values = tilesets
-            elif metadata["value_type"] == "values":
+            elif metadata[0]["value_type"] == "values":
                 param.values = self._values(parameter_name)
             params.append(param)
         return params
@@ -97,7 +95,7 @@ class Locations(Locations):
     def parameters(self) -> List[Parameter]:
         params = []
         for name, metadata in dataset.PARAMETERS.items():
-            param = Parameter(name, **metadata)
+            param = Parameter(name, **metadata[0])
             params.append(param)
         return params
 
@@ -135,7 +133,7 @@ class Locations(Locations):
 
     def get_collection_bbox(self):
         from .dataset import COLLECTIONS
-        return COLLECTIONS[self.collection_id]["bbox"]
+        return COLLECTIONS[self.collection_id].extent.spatial.bbox.bounds
 
 
 class Location(Location):

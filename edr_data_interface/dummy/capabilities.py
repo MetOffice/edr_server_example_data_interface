@@ -1,8 +1,6 @@
 from typing import List
 
-from edr_server.abstract_data_interface.capabilities import (
-    API, Capabilities, Conformance,
-    APIData, CapabilitiesData)
+from edr_server.abstract_data_interface.capabilities import API, APIData, Capabilities, CapabilitiesData, Conformance
 
 
 class API(API):

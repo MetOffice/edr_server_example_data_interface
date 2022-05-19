@@ -1,7 +1,7 @@
 from typing import List
 
 from edr_server.abstract_data_interface.locations import Feature
-from shapely.geometry import box, Polygon
+from shapely.geometry import Polygon, box
 
 from .locations import Parameters
 
