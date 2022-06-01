@@ -16,7 +16,9 @@ class Parameters(object):
     def _tilesets(self, param_name) -> List[Tileset]:
         """Define tilesets metadata for a specific parameter."""
         param_metadata = dataset.PARAMETERS[param_name][0]
-        free_axes = list(set(param_metadata["axes"]) - {"x", "y"})
+        # noinspection PySetFunctionToLiteral
+        # ref: https://github.com/ADAQ-AQI/EDRDataInterface/pull/16#discussion_r882439553
+        free_axes = list(set(param_metadata["axes"]) - set(["x", "y"]))
         tile_shape = [None] * len(param_metadata["axes"])
         url_extension = ""
         for free_axis in free_axes:
