@@ -21,7 +21,7 @@ class DummyCollectionsMetadataDataInterface(AbstractCollectionsMetadataDataInter
             raise CollectionNotFoundException(f"Collection {collection_id!r} doesn't exist")
 
 
-class DummyEdrDataInterface(EdrDataInterface):
+class DummyEdrDataInterface:
     """
     A patched version of EdrDataInterface whilst we're updating the data interface and transitioning this dummy
     implementation to use it
