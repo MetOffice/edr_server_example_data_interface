@@ -1,32 +1,9 @@
 from pathlib import Path
-import yaml
-from yaml.loader import SafeLoader
+
+from edr_server.core.config import EdrConfig
 
 
-class Config(object):
-    def __init__(self):
-        self.yaml_path = self._yaml_path()
-        self._yaml = None
-
-    @property
-    def yaml(self):
-        if self._yaml is None:
-            self.load_yaml()
-        return self._yaml
-
-    @yaml.setter
-    def yaml(self, value):
-        self._yaml = value
-
-    def _yaml_path(self):
-        relative_path = "etc/data_config.yml"
-        app_root = Path(__file__).parents[1]
-        return (app_root / Path(relative_path)).absolute()
-
-    def load_yaml(self):
-        """Load the config YAML file for parsing."""
-        with open(self.yaml_path, "r") as oyfh:
-            self.yaml = yaml.load(oyfh, Loader=SafeLoader)
+class Config(EdrConfig):
 
     def data_source(self):
         return self.yaml["data"]["source"]
@@ -45,7 +22,7 @@ class Config(object):
 
     def cloud_protocol(self, provider=None):
         if provider is None:
-            provider, _ = self.cloud_data_provider()
+            provider, *_ = self.cloud_data_provider()
         if self.data_source() == "cloud":
             protocol = "s3" if provider.lower() in ["s3", "aws"] else "https"
         else:
@@ -66,4 +43,4 @@ class Config(object):
         return data_path
 
 
-config = Config()
+config = Config((Path(__file__) / "../etc/data_config.yml").absolute())

@@ -1,8 +1,6 @@
 from itertools import chain
 from typing import List
 
-from shapely.geometry import box
-
 from edr_server.abstract_data_interface.area import Area
 from edr_server.abstract_data_interface.locations import Feature
 
@@ -19,7 +17,7 @@ class Area(Area):
 
     def get_collection_bbox(self):
         from .dataset import COLLECTIONS
-        return COLLECTIONS[self.collection_id]["bbox"]
+        return COLLECTIONS[self.collection_id].extent.spatial.bbox.bounds
 
     def all_items(self) -> List[Feature]:
         items_provider = Items(self.collection_id, self.query_parameters, "")

@@ -1,4 +1,3 @@
-from .admin import RefreshCollections
 from .area import Area
 from .capabilities import API, Capabilities, Conformance
 from .items import Item, Items
