@@ -1,12 +1,13 @@
+import numpy as np
 from datetime import datetime, timedelta, timezone
+from shapely.geometry import Point, Polygon, box
 from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
-from edr_server.core import CollectionMetadata
 from edr_server.core.models import EdrDataQuery
 from edr_server.core.models.extents import Extents, SpatialExtent, TemporalExtent, VerticalExtent
+from edr_server.core.models.metadata import CollectionMetadata
 from edr_server.core.models.parameters import ObservedProperty, Parameter, Symbol, Unit
-from shapely.geometry import Point, Polygon, box
+from edr_server.core.models.urls import URL, EdrUrlResolver
 
 
 def construct_data_3d(xy, t):
@@ -32,8 +33,6 @@ CATEGORY_ENCODING = {
     "#ccc": 60.0,
     "#fff": 80.0,
 }
-
-SUPPORTED_DATA_QUERIES = [query_type for query_type in EdrDataQuery]
 
 DATA = {
     "param1": construct_data_3d(100, 4),
@@ -335,7 +334,8 @@ COLLECTIONS: Dict[str, CollectionMetadata] = {
             ),
             vertical=None
         ),
-        supported_data_queries=SUPPORTED_DATA_QUERIES,
+        data_queries=CollectionMetadata.get_data_query_links(
+            EdrUrlResolver(URL("https://example.com")), "00001", [query for query in EdrDataQuery]),
         output_formats=["application/prs.coverage+json"],
         parameters=[PARAMETERS[param_id][1] for param_id in PARAMETERS_COLLECTIONS_LOOKUP["00001"]],
     ),
@@ -353,7 +353,8 @@ COLLECTIONS: Dict[str, CollectionMetadata] = {
             ),
             vertical=VerticalExtent([2, 3, 4, 5, 6, 7, 8, 9, 10])
         ),
-        supported_data_queries=SUPPORTED_DATA_QUERIES,
+        data_queries=CollectionMetadata.get_data_query_links(
+            EdrUrlResolver(URL("https://example.com")), "00002", [query for query in EdrDataQuery]),
         output_formats=["application/prs.coverage+json"],
         parameters=[PARAMETERS[param_id][1] for param_id in PARAMETERS_COLLECTIONS_LOOKUP["00002"]],
     ),
@@ -371,7 +372,8 @@ COLLECTIONS: Dict[str, CollectionMetadata] = {
             ),
             vertical=None
         ),
-        supported_data_queries=SUPPORTED_DATA_QUERIES,
+        data_queries=CollectionMetadata.get_data_query_links(
+            EdrUrlResolver(URL("https://example.com")), "00003", [query for query in EdrDataQuery]),
         output_formats=["application/prs.coverage+json"],
         parameters=[PARAMETERS[param_id][1] for param_id in PARAMETERS_COLLECTIONS_LOOKUP["00003"]],
     ),
@@ -389,7 +391,8 @@ COLLECTIONS: Dict[str, CollectionMetadata] = {
             ),
             vertical=VerticalExtent([2, 10])
         ),
-        supported_data_queries=SUPPORTED_DATA_QUERIES,
+        data_queries=CollectionMetadata.get_data_query_links(
+            EdrUrlResolver(URL("https://example.com")), "00004", [query for query in EdrDataQuery]),
         output_formats=["application/prs.coverage+json"],
         parameters=[PARAMETERS[param_id][1] for param_id in PARAMETERS_COLLECTIONS_LOOKUP["00004"]],
 
@@ -408,7 +411,8 @@ COLLECTIONS: Dict[str, CollectionMetadata] = {
             ),
             vertical=VerticalExtent([2])
         ),
-        supported_data_queries=SUPPORTED_DATA_QUERIES,
+        data_queries=CollectionMetadata.get_data_query_links(
+            EdrUrlResolver(URL("https://example.com")), "00005", [query for query in EdrDataQuery]),
         output_formats=["application/prs.coverage+json"],
         parameters=[PARAMETERS[param_id][1] for param_id in PARAMETERS_COLLECTIONS_LOOKUP["00005"]],
     ),
